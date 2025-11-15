@@ -4,7 +4,8 @@ using MySql.Data.MySqlClient;
 
 public static class DatabaseHelper
 {
-    private static string connectionString = "Server=localhost;Database=bems_db;Uid=root;Pwd=;";
+    private static string connectionString =
+    "Server=localhost;Database=bems_db;Uid=root;Pwd=root;";
 
     public static MySqlConnection GetConnection()
     {

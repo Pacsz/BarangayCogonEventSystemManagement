@@ -123,36 +123,42 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseHelper.cs" />
-    <Compile Include="frmApproveRegistrations.cs">
+    <Compile Include="Admin\frmApproveRegistrations.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmApproveRegistrations.Designer.cs">
+    <Compile Include="Admin\frmApproveRegistrations.Designer.cs">
       <DependentUpon>frmApproveRegistrations.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmAttendanceScanner.cs">
+    <Compile Include="Admin\frmAttendanceScanner.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmAttendanceScanner.Designer.cs">
+    <Compile Include="Admin\frmAttendanceScanner.Designer.cs">
       <DependentUpon>frmAttendanceScanner.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmDashboardAdmin.cs">
+    <Compile Include="Admin\frmDashboardAdmin.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmDashboardAdmin.Designer.cs">
+    <Compile Include="Admin\frmDashboardAdmin.Designer.cs">
       <DependentUpon>frmDashboardAdmin.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmDashboardResident.cs">
+    <Compile Include="Admin\frmManageEvents.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmDashboardResident.Designer.cs">
-      <DependentUpon>frmDashboardResident.cs</DependentUpon>
+    <Compile Include="Admin\frmManageEvents.Designer.cs">
+      <DependentUpon>frmManageEvents.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmLogin.cs">
+    <Compile Include="Admin\frmReports.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmLogin.Designer.cs">
-      <DependentUpon>frmLogin.cs</DependentUpon>
+    <Compile Include="Admin\frmReports.Designer.cs">
+      <DependentUpon>frmReports.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DatabaseHelper.cs" />
+    <Compile Include="Admin\frmAdminLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Admin\frmAdminLogin.Designer.cs">
+      <DependentUpon>frmAdminLogin.cs</DependentUpon>
     </Compile>
     <Compile Include="frmConnectionTest.cs">
       <SubType>Form</SubType>
@@ -160,80 +166,85 @@
     <Compile Include="frmConnectionTest.Designer.cs">
       <DependentUpon>frmConnectionTest.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmManageEvents.cs">
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="User\frmMyQR.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmManageEvents.Designer.cs">
-      <DependentUpon>frmManageEvents.cs</DependentUpon>
-    </Compile>
-    <Compile Include="frmMyEvents.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmMyEvents.Designer.cs">
-      <DependentUpon>frmMyEvents.cs</DependentUpon>
-    </Compile>
-    <Compile Include="frmMyQR.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmMyQR.Designer.cs">
+    <Compile Include="User\frmMyQR.Designer.cs">
       <DependentUpon>frmMyQR.cs</DependentUpon>
-    </Compile>
-    <Compile Include="frmRegister.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmRegister.Designer.cs">
-      <DependentUpon>frmRegister.cs</DependentUpon>
-    </Compile>
-    <Compile Include="frmReports.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmReports.Designer.cs">
-      <DependentUpon>frmReports.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="frmApproveRegistrations.resx">
+    <Compile Include="User\frmDashboardResident.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmDashboardResident.Designer.cs">
+      <DependentUpon>frmDashboardResident.cs</DependentUpon>
+    </Compile>
+    <Compile Include="User\frmMyEvents.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmMyEvents.Designer.cs">
+      <DependentUpon>frmMyEvents.cs</DependentUpon>
+    </Compile>
+    <Compile Include="User\frmRegister.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmRegister.Designer.cs">
+      <DependentUpon>frmRegister.cs</DependentUpon>
+    </Compile>
+    <Compile Include="User\frmUserLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmUserLogin.Designer.cs">
+      <DependentUpon>frmUserLogin.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Admin\frmApproveRegistrations.resx">
       <DependentUpon>frmApproveRegistrations.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmAttendanceScanner.resx">
+    <EmbeddedResource Include="Admin\frmAttendanceScanner.resx">
       <DependentUpon>frmAttendanceScanner.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Admin\frmDashboardAdmin.resx">
+      <DependentUpon>frmDashboardAdmin.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Admin\frmManageEvents.resx">
+      <DependentUpon>frmManageEvents.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Admin\frmReports.resx">
+      <DependentUpon>frmReports.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmConnectionTest.resx">
       <DependentUpon>frmConnectionTest.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmDashboardAdmin.resx">
-      <DependentUpon>frmDashboardAdmin.cs</DependentUpon>
+    <EmbeddedResource Include="Admin\frmAdminLogin.resx">
+      <DependentUpon>frmAdminLogin.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmDashboardResident.resx">
-      <DependentUpon>frmDashboardResident.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmLogin.resx">
-      <DependentUpon>frmLogin.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmManageEvents.resx">
-      <DependentUpon>frmManageEvents.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmMyEvents.resx">
-      <DependentUpon>frmMyEvents.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmMyQR.resx">
+    <EmbeddedResource Include="User\frmMyQR.resx">
       <DependentUpon>frmMyQR.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmRegister.resx">
-      <DependentUpon>frmRegister.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="frmReports.resx">
-      <DependentUpon>frmReports.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
+    <EmbeddedResource Include="User\frmDashboardResident.resx">
+      <DependentUpon>frmDashboardResident.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="User\frmMyEvents.resx">
+      <DependentUpon>frmMyEvents.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="User\frmRegister.resx">
+      <DependentUpon>frmRegister.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="User\frmUserLogin.resx">
+      <DependentUpon>frmUserLogin.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -247,6 +258,27 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\shet.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\macho.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\1.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\test.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ss.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\logo.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
