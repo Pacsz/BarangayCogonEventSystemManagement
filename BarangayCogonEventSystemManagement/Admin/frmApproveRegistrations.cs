@@ -14,8 +14,57 @@ namespace BarangayCogonEventManagementSystem
         public frmApproveRegistrations()
         {
             InitializeComponent();
+            InitializeContextMenuStyling();
             CustomizeDataGridView();
             LoadPendingRegistrations();
+        }
+
+        private void InitializeContextMenuStyling()
+        {
+            // Apply dark theme styling to context menu
+            contextMenuActions.BackColor = Color.FromArgb(37, 42, 64);
+            contextMenuActions.ForeColor = Color.White;
+            contextMenuActions.ShowImageMargin = false;  // Remove the left white margin
+            contextMenuActions.Renderer = new ToolStripProfessionalRenderer(new CustomContextMenuColorTable());
+        }
+
+        // Custom color table for context menu styling
+        private class CustomContextMenuColorTable : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemBorder
+            {
+                get { return Color.FromArgb(37, 42, 64); }
+            }
+
+            public override Color MenuBorder
+            {
+                get { return Color.FromArgb(60, 65, 90); }
+            }
+
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
         }
 
         private void CustomizeDataGridView()
@@ -239,10 +288,12 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Show Approve and Reject for pending registrations
                     ToolStripMenuItem approveItem = new ToolStripMenuItem("✓ Approve");
+                    approveItem.Font = new Font("Segoe UI", 10F);
                     approveItem.Click += (s, ev) => ApproveRegistration(registrationId, eventName, userName);
                     contextMenuActions.Items.Add(approveItem);
 
                     ToolStripMenuItem rejectItem = new ToolStripMenuItem("✗ Reject");
+                    rejectItem.Font = new Font("Segoe UI", 10F);
                     rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
                     contextMenuActions.Items.Add(rejectItem);
                 }
@@ -250,11 +301,13 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Show View QR for approved registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                    viewQRItem.Font = new Font("Segoe UI", 10F);
                     viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName);
                     contextMenuActions.Items.Add(viewQRItem);
 
                     // Option to reject approved registration
                     ToolStripMenuItem rejectItem = new ToolStripMenuItem("✗ Reject");
+                    rejectItem.Font = new Font("Segoe UI", 10F);
                     rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
                     contextMenuActions.Items.Add(rejectItem);
                 }
@@ -262,13 +315,24 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Show Approve for rejected registrations (allow re-approval)
                     ToolStripMenuItem approveItem = new ToolStripMenuItem("✓ Approve");
+                    approveItem.Font = new Font("Segoe UI", 10F);
                     approveItem.Click += (s, ev) => ApproveRegistration(registrationId, eventName, userName);
                     contextMenuActions.Items.Add(approveItem);
                 }
 
-                // Show the context menu at the cursor position
+                // Get cell rectangle
                 Rectangle rect = dgvRegistrations.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
-                Point pt = new Point(rect.Left + rect.Width, rect.Top + rect.Height);
+                
+                // Calculate the button position (centered in cell, same as in CellPainting)
+                int buttonWidth = 70;
+                int buttonHeight = 30;
+                int buttonX = rect.Left + (rect.Width - buttonWidth) / 2;
+                int buttonY = rect.Top + (rect.Height - buttonHeight) / 2;
+                
+                // Position context menu just below and to the right of the button
+                Point pt = new Point(buttonX + buttonWidth + 5, buttonY);
+                
+                // Show the context menu right next to the action button
                 contextMenuActions.Show(dgvRegistrations, pt);
             }
         }
