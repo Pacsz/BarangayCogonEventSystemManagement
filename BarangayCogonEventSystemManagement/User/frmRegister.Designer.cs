@@ -207,7 +207,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             // frmRegister
             // 
-            this.ClientSize = new System.Drawing.Size(850, 530);
+            this.ClientSize = new System.Drawing.Size(1176, 672);
             this.Controls.Add(this.pnlHeader);
             this.Controls.Add(this.lblName);
             this.Controls.Add(this.txtName);

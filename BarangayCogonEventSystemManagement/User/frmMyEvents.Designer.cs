@@ -109,7 +109,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             // frmMyEvents
             // 
-            this.ClientSize = new System.Drawing.Size(800, 667);
+            this.ClientSize = new System.Drawing.Size(1176, 672);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnViewDetails);

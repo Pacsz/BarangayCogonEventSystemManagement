@@ -121,7 +121,7 @@
             // 
             // frmMyQR
             // 
-            this.ClientSize = new System.Drawing.Size(700, 550);
+            this.ClientSize = new System.Drawing.Size(1176, 672);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnSaveQR);
             this.Controls.Add(this.lblEvent);

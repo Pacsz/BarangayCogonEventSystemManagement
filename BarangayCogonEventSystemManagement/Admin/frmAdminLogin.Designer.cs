@@ -51,18 +51,18 @@ namespace BarangayCogonEventManagementSystem
             this.pnlLogin.Dock = System.Windows.Forms.DockStyle.Top;
             this.pnlLogin.Location = new System.Drawing.Point(0, 0);
             this.pnlLogin.Name = "pnlLogin";
-            this.pnlLogin.Size = new System.Drawing.Size(1158, 90);
+            this.pnlLogin.Size = new System.Drawing.Size(1400, 100);
             this.pnlLogin.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(60)))), ((int)(((byte)(90)))));
             this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label1.Font = new System.Drawing.Font("Segoe UI", 19F, System.Drawing.FontStyle.Bold);
+            this.label1.Font = new System.Drawing.Font("Segoe UI", 22F, System.Drawing.FontStyle.Bold);
             this.label1.ForeColor = System.Drawing.Color.White;
             this.label1.Location = new System.Drawing.Point(0, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(1158, 90);
+            this.label1.Size = new System.Drawing.Size(1400, 100);
             this.label1.TabIndex = 1;
             this.label1.Text = "Barangay Cogon Event Management System";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -74,7 +74,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(0, 0);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(1158, 90);
+            this.lblTitle.Size = new System.Drawing.Size(1400, 100);
             this.lblTitle.TabIndex = 0;
             this.lblTitle.Text = "Barangay Cogon Event Management System";
             this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -84,23 +84,23 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.txtEmail.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
             this.txtEmail.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.txtEmail.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.txtEmail.Font = new System.Drawing.Font("Segoe UI", 12F);
             this.txtEmail.ForeColor = System.Drawing.Color.White;
-            this.txtEmail.Location = new System.Drawing.Point(601, 279);
+            this.txtEmail.Location = new System.Drawing.Point(750, 341);
             this.txtEmail.Name = "txtEmail";
-            this.txtEmail.Size = new System.Drawing.Size(341, 32);
+            this.txtEmail.Size = new System.Drawing.Size(400, 34);
             this.txtEmail.TabIndex = 2;
             // 
             // txtPassword
             // 
             this.txtPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
             this.txtPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.txtPassword.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.txtPassword.Font = new System.Drawing.Font("Segoe UI", 12F);
             this.txtPassword.ForeColor = System.Drawing.Color.White;
-            this.txtPassword.Location = new System.Drawing.Point(601, 359);
+            this.txtPassword.Location = new System.Drawing.Point(750, 441);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '●';
-            this.txtPassword.Size = new System.Drawing.Size(341, 32);
+            this.txtPassword.Size = new System.Drawing.Size(400, 34);
             this.txtPassword.TabIndex = 4;
             // 
             // btnLogin
@@ -108,11 +108,11 @@ namespace BarangayCogonEventManagementSystem
             this.btnLogin.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(60)))), ((int)(((byte)(90)))));
             this.btnLogin.FlatAppearance.BorderSize = 0;
             this.btnLogin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnLogin.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.btnLogin.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
             this.btnLogin.ForeColor = System.Drawing.Color.White;
-            this.btnLogin.Location = new System.Drawing.Point(651, 421);
+            this.btnLogin.Location = new System.Drawing.Point(830, 511);
             this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new System.Drawing.Size(240, 45);
+            this.btnLogin.Size = new System.Drawing.Size(240, 50);
             this.btnLogin.TabIndex = 5;
             this.btnLogin.Text = "LOGIN";
             this.btnLogin.UseVisualStyleBackColor = false;
@@ -120,21 +120,21 @@ namespace BarangayCogonEventManagementSystem
             // 
             // lblEmail
             // 
-            this.lblEmail.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.lblEmail.Font = new System.Drawing.Font("Segoe UI Semibold", 11F, System.Drawing.FontStyle.Bold);
             this.lblEmail.ForeColor = System.Drawing.Color.White;
-            this.lblEmail.Location = new System.Drawing.Point(597, 253);
+            this.lblEmail.Location = new System.Drawing.Point(746, 311);
             this.lblEmail.Name = "lblEmail";
-            this.lblEmail.Size = new System.Drawing.Size(100, 23);
+            this.lblEmail.Size = new System.Drawing.Size(120, 25);
             this.lblEmail.TabIndex = 1;
             this.lblEmail.Text = "Email";
             // 
             // lblPassword
             // 
-            this.lblPassword.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.lblPassword.Font = new System.Drawing.Font("Segoe UI Semibold", 11F, System.Drawing.FontStyle.Bold);
             this.lblPassword.ForeColor = System.Drawing.Color.White;
-            this.lblPassword.Location = new System.Drawing.Point(597, 333);
+            this.lblPassword.Location = new System.Drawing.Point(746, 411);
             this.lblPassword.Name = "lblPassword";
-            this.lblPassword.Size = new System.Drawing.Size(100, 23);
+            this.lblPassword.Size = new System.Drawing.Size(120, 25);
             this.lblPassword.TabIndex = 3;
             this.lblPassword.Text = "Password";
             // 
@@ -142,29 +142,31 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.labelGreeting.AutoSize = true;
             this.labelGreeting.BackColor = System.Drawing.Color.Transparent;
-            this.labelGreeting.Font = new System.Drawing.Font("Segoe UI", 19.25F, System.Drawing.FontStyle.Bold);
+            this.labelGreeting.Font = new System.Drawing.Font("Segoe UI", 22F, System.Drawing.FontStyle.Bold);
             this.labelGreeting.ForeColor = System.Drawing.Color.White;
-            this.labelGreeting.Location = new System.Drawing.Point(687, 191);
+            this.labelGreeting.Location = new System.Drawing.Point(850, 236);
             this.labelGreeting.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelGreeting.Name = "labelGreeting";
-            this.labelGreeting.Size = new System.Drawing.Size(217, 45);
+            this.labelGreeting.Size = new System.Drawing.Size(246, 50);
             this.labelGreeting.TabIndex = 26;
             this.labelGreeting.Text = "Admin Login";
             // 
             // pictureBox1
             // 
             this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
-            this.pictureBox1.Location = new System.Drawing.Point(192, 139);
+            this.pictureBox1.Location = new System.Drawing.Point(220, 201);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(354, 392);
+            this.pictureBox1.Size = new System.Drawing.Size(450, 450);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 27;
             this.pictureBox1.TabStop = false;
             this.pictureBox1.Click += new System.EventHandler(this.pictureBox1_Click);
             // 
             // frmAdminLogin
             // 
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(30)))), ((int)(((byte)(54)))));
-            this.ClientSize = new System.Drawing.Size(1158, 625);
+            this.ClientSize = new System.Drawing.Size(1400, 800);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.labelGreeting);
             this.Controls.Add(this.pnlLogin);
@@ -174,9 +176,11 @@ namespace BarangayCogonEventManagementSystem
             this.Controls.Add(this.txtPassword);
             this.Controls.Add(this.btnLogin);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
             this.Name = "frmAdminLogin";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Login - Barangay Event Management System";
+            this.Load += new System.EventHandler(this.frmAdminLogin_Load);
             this.pnlLogin.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);

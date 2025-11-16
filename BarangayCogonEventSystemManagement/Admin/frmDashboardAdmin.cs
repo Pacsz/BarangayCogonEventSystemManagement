@@ -1,18 +1,117 @@
 ﻿using System;
 using System.Data;
+using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using FontAwesome.Sharp;
 
 namespace BarangayCogonEventManagementSystem
 {
     public partial class frmDashboardAdmin : Form
     {
+        private IconButton currentActiveButton;
+        private readonly Color activeOrHoverColor = Color.FromArgb(46, 51, 73);
+        private readonly Color defaultColor = Color.Transparent;
+        private Form currentChildForm;
+        private Control[] dashboardControls;
+
         public frmDashboardAdmin()
         {
             InitializeComponent();
+            dashboardControls = new[]
+            {
+                lblEventsCount, lblEvents, lblAttendeesCount, lblAttendees,
+                lblVolunteersCount, lblVolunteers, lblPresentCount, lblPresent
+            };
             LoadDashboardData();
+            AttachHoverHandlers();
+            if (btnDashboard != null)
+                HighlightNav(btnDashboard);
         }
 
-        // 🟦 Load statistics into the dashboard
+        private void OpenChild(Form child)
+        {
+            try
+            {
+                foreach (var frm in mainPanel.Controls.OfType<Form>().ToList())
+                {
+                    mainPanel.Controls.Remove(frm);
+                    frm.Dispose();
+                }
+                currentChildForm = null;
+
+                if (child == null)
+                {
+                    foreach (var ctrl in dashboardControls)
+                        ctrl.Visible = true;
+                    LoadDashboardData();
+                    return;
+                }
+
+                foreach (var ctrl in dashboardControls)
+                    ctrl.Visible = false;
+
+                currentChildForm = child;
+                child.TopLevel = false;
+                child.FormBorderStyle = FormBorderStyle.None;
+                child.Dock = DockStyle.Fill;
+                mainPanel.Controls.Add(child);
+                child.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading view: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void AttachHoverHandlers()
+        {
+            foreach (Control c in sidebar.Controls)
+            {
+                if (c is IconButton b)
+                {
+                    b.MouseEnter -= SidebarButton_MouseEnter;
+                    b.MouseLeave -= SidebarButton_MouseLeave;
+                    b.MouseEnter += SidebarButton_MouseEnter;
+                    b.MouseLeave += SidebarButton_MouseLeave;
+                }
+            }
+        }
+
+        private void SidebarButton_MouseEnter(object sender, EventArgs e)
+        {
+            if (sender is IconButton b)
+                b.BackColor = activeOrHoverColor;
+        }
+
+        private void SidebarButton_MouseLeave(object sender, EventArgs e)
+        {
+            if (sender is IconButton b && b != currentActiveButton)
+                b.BackColor = defaultColor;
+        }
+
+        private void HighlightNav(IconButton btn)
+        {
+            if (pnlNav == null || sidebar == null || btn == null) return;
+            pnlNav.Top = btn.Top;
+            pnlNav.Height = btn.Height;
+            currentActiveButton = btn;
+
+            foreach (Control c in sidebar.Controls)
+            {
+                if (c is IconButton b && b != currentActiveButton)
+                    b.BackColor = defaultColor;
+            }
+            btn.BackColor = activeOrHoverColor;
+        }
+
+        private void btnDashboard_Click(object sender, EventArgs e)
+        {
+            HighlightNav(btnDashboard);
+            lblTitle.Text = "Admin Dashboard";
+            OpenChild(null);
+        }
+
         private void LoadDashboardData()
         {
             try
@@ -40,64 +139,41 @@ namespace BarangayCogonEventManagementSystem
             }
         }
 
-        // 🟩 Manage Events Button
         private void btnManageEvents_Click(object sender, EventArgs e)
         {
-            try
-            {
-                frmManageEvents manageEvents = new frmManageEvents();
-                manageEvents.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error opening Manage Events: " + ex.Message);
-            }
+            HighlightNav(btnManageEvents);
+            lblTitle.Text = "Manage Events";
+            OpenChild(new frmManageEvents());
         }
 
-        // 🟩 Registrations Button (Approval)
         private void btnRegistrations_Click(object sender, EventArgs e)
         {
-            try
-            {
-                frmApproveRegistrations regForm = new frmApproveRegistrations();
-                regForm.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error opening Registrations: " + ex.Message);
-            }
+            HighlightNav(btnRegistrations);
+            lblTitle.Text = "Registrations";
+            OpenChild(new frmApproveRegistrations());
         }
 
-        // 🟩 Reports Button
         private void btnReports_Click(object sender, EventArgs e)
         {
-            frmReports reports = new frmReports();
-            reports.ShowDialog();
+            HighlightNav(btnReports);
+            lblTitle.Text = "Reports";
+            OpenChild(new frmReports());
         }
 
-        // 🟩 QR Scanner Button
         private void btnScanner_Click(object sender, EventArgs e)
         {
-            try
-            {
-                frmAttendanceScanner scanForm = new frmAttendanceScanner();
-                scanForm.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error opening QR Scanner: " + ex.Message);
-            }
+            HighlightNav(btnQRScanner);
+            lblTitle.Text = "QR Scanner";
+            OpenChild(new frmAttendanceScanner());
         }
 
-        // 🟥 Logout Button
         private void btnLogout_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
                 "Are you sure you want to logout?",
                 "Logout Confirmation",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question
-            );
+                MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
             {
@@ -106,6 +182,16 @@ namespace BarangayCogonEventManagementSystem
                 login.ShowDialog();
                 this.Close();
             }
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void frmDashboardAdmin_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

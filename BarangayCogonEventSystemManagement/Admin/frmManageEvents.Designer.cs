@@ -54,7 +54,8 @@ namespace BarangayCogonEventManagementSystem
             // lblTitle
             // 
             this.lblTitle.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblTitle.Location = new System.Drawing.Point(49, 37);
+            this.lblTitle.ForeColor = System.Drawing.Color.White;
+            this.lblTitle.Location = new System.Drawing.Point(20, 20);
             this.lblTitle.Name = "lblTitle";
             this.lblTitle.Size = new System.Drawing.Size(135, 32);
             this.lblTitle.TabIndex = 0;
@@ -62,16 +63,17 @@ namespace BarangayCogonEventManagementSystem
             // 
             // txtTitle
             // 
-            this.txtTitle.Location = new System.Drawing.Point(190, 30);
+            this.txtTitle.Location = new System.Drawing.Point(160, 20);
             this.txtTitle.Multiline = true;
             this.txtTitle.Name = "txtTitle";
-            this.txtTitle.Size = new System.Drawing.Size(250, 39);
+            this.txtTitle.Size = new System.Drawing.Size(250, 35);
             this.txtTitle.TabIndex = 1;
             // 
             // lblDescription
             // 
             this.lblDescription.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblDescription.Location = new System.Drawing.Point(49, 117);
+            this.lblDescription.ForeColor = System.Drawing.Color.White;
+            this.lblDescription.Location = new System.Drawing.Point(20, 70);
             this.lblDescription.Name = "lblDescription";
             this.lblDescription.Size = new System.Drawing.Size(142, 23);
             this.lblDescription.TabIndex = 2;
@@ -79,7 +81,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             // txtDescription
             // 
-            this.txtDescription.Location = new System.Drawing.Point(190, 102);
+            this.txtDescription.Location = new System.Drawing.Point(160, 70);
             this.txtDescription.Multiline = true;
             this.txtDescription.Name = "txtDescription";
             this.txtDescription.Size = new System.Drawing.Size(250, 60);
@@ -88,7 +90,8 @@ namespace BarangayCogonEventManagementSystem
             // lblDate
             // 
             this.lblDate.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblDate.Location = new System.Drawing.Point(49, 192);
+            this.lblDate.ForeColor = System.Drawing.Color.White;
+            this.lblDate.Location = new System.Drawing.Point(20, 145);
             this.lblDate.Name = "lblDate";
             this.lblDate.Size = new System.Drawing.Size(100, 23);
             this.lblDate.TabIndex = 4;
@@ -96,7 +99,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             // dtpDate
             // 
-            this.dtpDate.Location = new System.Drawing.Point(190, 189);
+            this.dtpDate.Location = new System.Drawing.Point(160, 145);
             this.dtpDate.Name = "dtpDate";
             this.dtpDate.Size = new System.Drawing.Size(250, 26);
             this.dtpDate.TabIndex = 5;
@@ -104,7 +107,8 @@ namespace BarangayCogonEventManagementSystem
             // lblTime
             // 
             this.lblTime.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblTime.Location = new System.Drawing.Point(49, 248);
+            this.lblTime.ForeColor = System.Drawing.Color.White;
+            this.lblTime.Location = new System.Drawing.Point(20, 185);
             this.lblTime.Name = "lblTime";
             this.lblTime.Size = new System.Drawing.Size(100, 23);
             this.lblTime.TabIndex = 6;
@@ -113,7 +117,7 @@ namespace BarangayCogonEventManagementSystem
             // dtpTime
             // 
             this.dtpTime.Format = System.Windows.Forms.DateTimePickerFormat.Time;
-            this.dtpTime.Location = new System.Drawing.Point(190, 245);
+            this.dtpTime.Location = new System.Drawing.Point(160, 185);
             this.dtpTime.Name = "dtpTime";
             this.dtpTime.ShowUpDown = true;
             this.dtpTime.Size = new System.Drawing.Size(250, 26);
@@ -122,7 +126,8 @@ namespace BarangayCogonEventManagementSystem
             // lblVenue
             // 
             this.lblVenue.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblVenue.Location = new System.Drawing.Point(49, 312);
+            this.lblVenue.ForeColor = System.Drawing.Color.White;
+            this.lblVenue.Location = new System.Drawing.Point(20, 225);
             this.lblVenue.Name = "lblVenue";
             this.lblVenue.Size = new System.Drawing.Size(100, 23);
             this.lblVenue.TabIndex = 8;
@@ -130,16 +135,17 @@ namespace BarangayCogonEventManagementSystem
             // 
             // txtVenue
             // 
-            this.txtVenue.Location = new System.Drawing.Point(190, 303);
+            this.txtVenue.Location = new System.Drawing.Point(160, 225);
             this.txtVenue.Multiline = true;
             this.txtVenue.Name = "txtVenue";
-            this.txtVenue.Size = new System.Drawing.Size(250, 41);
+            this.txtVenue.Size = new System.Drawing.Size(250, 35);
             this.txtVenue.TabIndex = 9;
             // 
             // lblType
             // 
             this.lblType.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblType.Location = new System.Drawing.Point(49, 376);
+            this.lblType.ForeColor = System.Drawing.Color.White;
+            this.lblType.Location = new System.Drawing.Point(20, 275);
             this.lblType.Name = "lblType";
             this.lblType.Size = new System.Drawing.Size(100, 23);
             this.lblType.TabIndex = 10;
@@ -153,7 +159,7 @@ namespace BarangayCogonEventManagementSystem
             "Cleanup Drive",
             "Barangay Assembly",
             "Training / Workshop"});
-            this.cboType.Location = new System.Drawing.Point(190, 377);
+            this.cboType.Location = new System.Drawing.Point(160, 275);
             this.cboType.Name = "cboType";
             this.cboType.Size = new System.Drawing.Size(250, 28);
             this.cboType.TabIndex = 11;
@@ -161,7 +167,8 @@ namespace BarangayCogonEventManagementSystem
             // lblOrganizer
             // 
             this.lblOrganizer.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
-            this.lblOrganizer.Location = new System.Drawing.Point(49, 447);
+            this.lblOrganizer.ForeColor = System.Drawing.Color.White;
+            this.lblOrganizer.Location = new System.Drawing.Point(20, 320);
             this.lblOrganizer.Name = "lblOrganizer";
             this.lblOrganizer.Size = new System.Drawing.Size(116, 34);
             this.lblOrganizer.TabIndex = 12;
@@ -169,19 +176,19 @@ namespace BarangayCogonEventManagementSystem
             // 
             // txtOrganizer
             // 
-            this.txtOrganizer.Location = new System.Drawing.Point(190, 444);
+            this.txtOrganizer.Location = new System.Drawing.Point(160, 320);
             this.txtOrganizer.Multiline = true;
             this.txtOrganizer.Name = "txtOrganizer";
-            this.txtOrganizer.Size = new System.Drawing.Size(250, 42);
+            this.txtOrganizer.Size = new System.Drawing.Size(250, 35);
             this.txtOrganizer.TabIndex = 13;
             // 
             // btnAddEvent
             // 
             this.btnAddEvent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(118)))), ((int)(((byte)(210)))));
             this.btnAddEvent.ForeColor = System.Drawing.Color.White;
-            this.btnAddEvent.Location = new System.Drawing.Point(145, 527);
+            this.btnAddEvent.Location = new System.Drawing.Point(90, 380);
             this.btnAddEvent.Name = "btnAddEvent";
-            this.btnAddEvent.Size = new System.Drawing.Size(95, 51);
+            this.btnAddEvent.Size = new System.Drawing.Size(95, 45);
             this.btnAddEvent.TabIndex = 14;
             this.btnAddEvent.Text = "Add";
             this.btnAddEvent.UseVisualStyleBackColor = false;
@@ -191,9 +198,9 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.btnUpdateEvent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(56)))), ((int)(((byte)(142)))), ((int)(((byte)(60)))));
             this.btnUpdateEvent.ForeColor = System.Drawing.Color.White;
-            this.btnUpdateEvent.Location = new System.Drawing.Point(269, 527);
+            this.btnUpdateEvent.Location = new System.Drawing.Point(210, 380);
             this.btnUpdateEvent.Name = "btnUpdateEvent";
-            this.btnUpdateEvent.Size = new System.Drawing.Size(95, 51);
+            this.btnUpdateEvent.Size = new System.Drawing.Size(95, 45);
             this.btnUpdateEvent.TabIndex = 15;
             this.btnUpdateEvent.Text = "Update";
             this.btnUpdateEvent.UseVisualStyleBackColor = false;
@@ -203,9 +210,9 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.btnDeleteEvent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(211)))), ((int)(((byte)(47)))), ((int)(((byte)(47)))));
             this.btnDeleteEvent.ForeColor = System.Drawing.Color.White;
-            this.btnDeleteEvent.Location = new System.Drawing.Point(390, 527);
+            this.btnDeleteEvent.Location = new System.Drawing.Point(330, 380);
             this.btnDeleteEvent.Name = "btnDeleteEvent";
-            this.btnDeleteEvent.Size = new System.Drawing.Size(95, 51);
+            this.btnDeleteEvent.Size = new System.Drawing.Size(95, 45);
             this.btnDeleteEvent.TabIndex = 16;
             this.btnDeleteEvent.Text = "Delete";
             this.btnDeleteEvent.UseVisualStyleBackColor = false;
@@ -213,20 +220,25 @@ namespace BarangayCogonEventManagementSystem
             // 
             // dgvEvents
             // 
+            this.dgvEvents.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvEvents.ColumnHeadersHeight = 34;
-            this.dgvEvents.Location = new System.Drawing.Point(491, 30);
+            this.dgvEvents.Location = new System.Drawing.Point(450, 20);
             this.dgvEvents.Name = "dgvEvents";
             this.dgvEvents.ReadOnly = true;
             this.dgvEvents.RowHeadersWidth = 62;
             this.dgvEvents.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvEvents.Size = new System.Drawing.Size(508, 435);
+            this.dgvEvents.Size = new System.Drawing.Size(476, 565);
             this.dgvEvents.TabIndex = 17;
             this.dgvEvents.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEvents_CellClick);
             this.dgvEvents.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvEvents_CellContentClick);
             // 
             // frmManageEvents
             // 
-            this.ClientSize = new System.Drawing.Size(1031, 692);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(51)))), ((int)(((byte)(73)))));
+            this.ClientSize = new System.Drawing.Size(948, 608);
             this.Controls.Add(this.lblTitle);
             this.Controls.Add(this.txtTitle);
             this.Controls.Add(this.lblDescription);
@@ -245,8 +257,8 @@ namespace BarangayCogonEventManagementSystem
             this.Controls.Add(this.btnUpdateEvent);
             this.Controls.Add(this.btnDeleteEvent);
             this.Controls.Add(this.dgvEvents);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "frmManageEvents";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Manage Events";
             ((System.ComponentModel.ISupportInitialize)(this.dgvEvents)).EndInit();
             this.ResumeLayout(false);

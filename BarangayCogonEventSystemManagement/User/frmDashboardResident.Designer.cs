@@ -199,7 +199,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1045, 638);
+            this.ClientSize = new System.Drawing.Size(1176, 672);
             this.Controls.Add(this.mainPanel);
             this.Controls.Add(this.topBar);
             this.Controls.Add(this.sidebar);

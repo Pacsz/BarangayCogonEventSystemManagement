@@ -88,5 +88,10 @@ namespace BarangayCogonEventManagementSystem
         {
 
         }
+
+        private void frmAdminLogin_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
