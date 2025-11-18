@@ -7,7 +7,6 @@ namespace BarangayCogonEventManagementSystem
         private System.Windows.Forms.Label lblSummary;
         private System.Windows.Forms.Label lblTotals;
         private System.Windows.Forms.Button btnExportPDF;
-        private System.Windows.Forms.Button btnRefresh;
 
         protected override void Dispose(bool disposing)
         {
@@ -113,5 +112,7 @@ namespace BarangayCogonEventManagementSystem
             this.ResumeLayout(false);
 
         }
+
+        private System.Windows.Forms.Button btnRefresh;
     }
 }

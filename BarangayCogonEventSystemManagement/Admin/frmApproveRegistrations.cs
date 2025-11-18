@@ -246,11 +246,15 @@ namespace BarangayCogonEventManagementSystem
                 // Populate rows manually to maintain custom styling
                 foreach (DataRow dr in dt.Rows)
                 {
+                    // Capitalize the first letter of the role
+                    string role = dr["role"].ToString();
+                    string capitalizedRole = string.IsNullOrEmpty(role) ? role : char.ToUpper(role[0]) + role.Substring(1).ToLower();
+
                     int rowIndex = dgvRegistrations.Rows.Add(
                         dr["id"],
                         dr["event_name"],
                         dr["user_name"],
-                        dr["role"],
+                        capitalizedRole,
                         dr["status"],
                         dr["qr_code"],
                         "" // ActionColumn (will be custom painted)

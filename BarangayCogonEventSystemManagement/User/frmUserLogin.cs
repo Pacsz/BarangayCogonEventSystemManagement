@@ -51,8 +51,8 @@ namespace BarangayCogonEventManagementSystem
                     MessageBox.Show($"Welcome, {name}!", "Login Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     this.Hide();
-                    frmDashboardAdmin admin = new frmDashboardAdmin();
-                    admin.ShowDialog();
+                    frmDashboardResident resident = new frmDashboardResident(userId, name, role);
+                    resident.ShowDialog();
                     this.Close();
                 }
                 else
