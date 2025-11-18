@@ -279,6 +279,7 @@ namespace BarangayCogonEventManagementSystem
                 int registrationId = Convert.ToInt32(row.Cells["id"].Value);
                 string eventName = row.Cells["event_name"].Value?.ToString();
                 string userName = row.Cells["user_name"].Value?.ToString();
+                string qrCode = row.Cells["qr_code"].Value?.ToString();
 
                 // Clear existing menu items
                 contextMenuActions.Items.Clear();
@@ -302,7 +303,7 @@ namespace BarangayCogonEventManagementSystem
                     // Show View QR for approved registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
                     viewQRItem.Font = new Font("Segoe UI", 10F);
-                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
                     contextMenuActions.Items.Add(viewQRItem);
 
                     // Option to reject approved registration
@@ -408,14 +409,23 @@ namespace BarangayCogonEventManagementSystem
             }
         }
 
-        private void ViewQRCode(string eventName, string userName)
+        private void ViewQRCode(string eventName, string userName, string qrCodeData)
         {
             try
             {
-                string filePath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes", 
-                    $"{eventName}_{userName}.png".Replace(" ", "_"));
+                // Check if QR code data exists
+                if (string.IsNullOrEmpty(qrCodeData))
+                {
+                    MessageBox.Show("No QR code data available for this registration.", "Missing QR Code", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
-                if (File.Exists(filePath))
+                // Generate QR code image from data
+                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                using (QRCodeData qrData = qrGenerator.CreateQrCode(qrCodeData, QRCodeGenerator.ECCLevel.Q))
+                using (QRCode qrCode = new QRCode(qrData))
+                using (Bitmap qrImage = qrCode.GetGraphic(6))
                 {
                     // Create a form to display the QR code
                     Form qrForm = new Form
@@ -431,7 +441,7 @@ namespace BarangayCogonEventManagementSystem
 
                     PictureBox picQR = new PictureBox
                     {
-                        Image = Image.FromFile(filePath),
+                        Image = (Bitmap)qrImage.Clone(), // Clone the image to avoid disposal issues
                         SizeMode = PictureBoxSizeMode.Zoom,
                         Dock = DockStyle.Fill
                     };
@@ -450,11 +460,6 @@ namespace BarangayCogonEventManagementSystem
                     qrForm.Controls.Add(picQR);
                     qrForm.Controls.Add(lblInfo);
                     qrForm.ShowDialog();
-                }
-                else
-                {
-                    MessageBox.Show("QR code file not found for this user.", "Missing QR", 
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)

@@ -3,8 +3,6 @@ namespace BarangayCogonEventManagementSystem
     partial class frmReports
     {
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Panel topPanel;
-        private System.Windows.Forms.Label lblTitle;
         private System.Windows.Forms.DataGridView dgvReports;
         private System.Windows.Forms.Label lblSummary;
         private System.Windows.Forms.Label lblTotals;
@@ -19,37 +17,13 @@ namespace BarangayCogonEventManagementSystem
 
         private void InitializeComponent()
         {
-            this.topPanel = new System.Windows.Forms.Panel();
-            this.lblTitle = new System.Windows.Forms.Label();
             this.dgvReports = new System.Windows.Forms.DataGridView();
             this.lblSummary = new System.Windows.Forms.Label();
             this.lblTotals = new System.Windows.Forms.Label();
             this.btnExportPDF = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
-            this.topPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvReports)).BeginInit();
             this.SuspendLayout();
-            // 
-            // topPanel
-            // 
-            this.topPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(118)))), ((int)(((byte)(210)))));
-            this.topPanel.Controls.Add(this.lblTitle);
-            this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.topPanel.Location = new System.Drawing.Point(0, 0);
-            this.topPanel.Name = "topPanel";
-            this.topPanel.Size = new System.Drawing.Size(948, 60);
-            this.topPanel.TabIndex = 0;
-            // 
-            // lblTitle
-            // 
-            this.lblTitle.Font = new System.Drawing.Font("Segoe UI Semibold", 16F);
-            this.lblTitle.ForeColor = System.Drawing.Color.White;
-            this.lblTitle.Location = new System.Drawing.Point(12, 10);
-            this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(400, 40);
-            this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "?? Event Attendance Reports";
-            this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // dgvReports
             // 
@@ -61,7 +35,7 @@ namespace BarangayCogonEventManagementSystem
             this.dgvReports.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvReports.BackgroundColor = System.Drawing.Color.White;
             this.dgvReports.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvReports.Location = new System.Drawing.Point(20, 80);
+            this.dgvReports.Location = new System.Drawing.Point(20, 32);
             this.dgvReports.Name = "dgvReports";
             this.dgvReports.ReadOnly = true;
             this.dgvReports.RowHeadersVisible = false;
@@ -75,7 +49,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblSummary.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblSummary.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
             this.lblSummary.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(118)))), ((int)(((byte)(210)))));
-            this.lblSummary.Location = new System.Drawing.Point(15, 455);
+            this.lblSummary.Location = new System.Drawing.Point(15, 407);
             this.lblSummary.Name = "lblSummary";
             this.lblSummary.Size = new System.Drawing.Size(440, 30);
             this.lblSummary.TabIndex = 4;
@@ -86,7 +60,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblTotals.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblTotals.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.lblTotals.ForeColor = System.Drawing.Color.White;
-            this.lblTotals.Location = new System.Drawing.Point(25, 490);
+            this.lblTotals.Location = new System.Drawing.Point(25, 442);
             this.lblTotals.Name = "lblTotals";
             this.lblTotals.Size = new System.Drawing.Size(440, 100);
             this.lblTotals.TabIndex = 5;
@@ -98,7 +72,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnExportPDF.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnExportPDF.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnExportPDF.ForeColor = System.Drawing.Color.White;
-            this.btnExportPDF.Location = new System.Drawing.Point(788, 500);
+            this.btnExportPDF.Location = new System.Drawing.Point(788, 452);
             this.btnExportPDF.Name = "btnExportPDF";
             this.btnExportPDF.Size = new System.Drawing.Size(140, 70);
             this.btnExportPDF.TabIndex = 2;
@@ -113,7 +87,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnRefresh.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnRefresh.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnRefresh.ForeColor = System.Drawing.Color.White;
-            this.btnRefresh.Location = new System.Drawing.Point(628, 500);
+            this.btnRefresh.Location = new System.Drawing.Point(628, 452);
             this.btnRefresh.Name = "btnRefresh";
             this.btnRefresh.Size = new System.Drawing.Size(140, 70);
             this.btnRefresh.TabIndex = 3;
@@ -131,12 +105,10 @@ namespace BarangayCogonEventManagementSystem
             this.Controls.Add(this.btnRefresh);
             this.Controls.Add(this.btnExportPDF);
             this.Controls.Add(this.dgvReports);
-            this.Controls.Add(this.topPanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "frmReports";
             this.Text = "Event Reports";
             this.Load += new System.EventHandler(this.frmReports_Load);
-            this.topPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvReports)).EndInit();
             this.ResumeLayout(false);
 
