@@ -123,11 +123,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Admin\frmApproveRegistrations.cs">
+    <Compile Include="Admin\frmRegistrations.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Admin\frmApproveRegistrations.Designer.cs">
-      <DependentUpon>frmApproveRegistrations.cs</DependentUpon>
+    <Compile Include="Admin\frmRegistrations.Designer.cs">
+      <DependentUpon>frmRegistrations.cs</DependentUpon>
     </Compile>
     <Compile Include="Admin\frmAttendanceScanner.cs">
       <SubType>Form</SubType>
@@ -171,6 +171,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="User\frmBrowseEvents.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmBrowseEvents.Designer.cs">
+      <DependentUpon>frmBrowseEvents.cs</DependentUpon>
+    </Compile>
     <Compile Include="User\frmMyQR.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -179,11 +185,11 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="User\frmDashboardResident.cs">
+    <Compile Include="User\frmDashboardUser.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="User\frmDashboardResident.Designer.cs">
-      <DependentUpon>frmDashboardResident.cs</DependentUpon>
+    <Compile Include="User\frmDashboardUser.Designer.cs">
+      <DependentUpon>frmDashboardUser.cs</DependentUpon>
     </Compile>
     <Compile Include="User\frmMyEvents.cs">
       <SubType>Form</SubType>
@@ -203,8 +209,8 @@
     <Compile Include="User\frmUserLogin.Designer.cs">
       <DependentUpon>frmUserLogin.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="Admin\frmApproveRegistrations.resx">
-      <DependentUpon>frmApproveRegistrations.cs</DependentUpon>
+    <EmbeddedResource Include="Admin\frmRegistrations.resx">
+      <DependentUpon>frmRegistrations.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Admin\frmAttendanceScanner.resx">
       <DependentUpon>frmAttendanceScanner.cs</DependentUpon>
@@ -233,8 +239,8 @@
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="User\frmDashboardResident.resx">
-      <DependentUpon>frmDashboardResident.cs</DependentUpon>
+    <EmbeddedResource Include="User\frmDashboardUser.resx">
+      <DependentUpon>frmDashboardUser.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="User\frmMyEvents.resx">
       <DependentUpon>frmMyEvents.cs</DependentUpon>

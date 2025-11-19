@@ -96,14 +96,14 @@ namespace BarangayCogonEventManagementSystem
             dgvRecentRegistrations.AllowUserToAddRows = false;
             dgvRecentRegistrations.ReadOnly = true;
 
-            // GENERAL GRID SETTINGS - Match mainPanel background
+            // GENERAL GRID SETTINGS - Match user dashboard style
             dgvRecentRegistrations.BackgroundColor = Color.FromArgb(37, 42, 64);
             dgvRecentRegistrations.BorderStyle = BorderStyle.None;
             dgvRecentRegistrations.GridColor = Color.FromArgb(60, 65, 90);
             dgvRecentRegistrations.EnableHeadersVisualStyles = false;
             dgvRecentRegistrations.CellBorderStyle = DataGridViewCellBorderStyle.Single;
 
-            // HEADER STYLE - Match sidebar color (FIXED: Added missing border styles)
+            // HEADER STYLE
             dgvRecentRegistrations.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             dgvRecentRegistrations.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(24, 30, 54);
             dgvRecentRegistrations.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
@@ -114,7 +114,7 @@ namespace BarangayCogonEventManagementSystem
             dgvRecentRegistrations.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold);
             dgvRecentRegistrations.ColumnHeadersHeight = 45;
 
-            // CELL STYLE - Match mainPanel background (keep same color when selected)
+            // CELL STYLE
             dgvRecentRegistrations.DefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvRecentRegistrations.DefaultCellStyle.ForeColor = Color.White;
             dgvRecentRegistrations.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
@@ -124,10 +124,10 @@ namespace BarangayCogonEventManagementSystem
             dgvRecentRegistrations.RowHeadersVisible = false;
             dgvRecentRegistrations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // Alternating rows - slightly darker for subtle contrast
-            dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(37, 42, 64);
+            // Alternating rows - SAME color as default cells for consistency
+            dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
-            dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(37, 42, 64);
+            dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvRecentRegistrations.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
 
             // Enable double buffering to reduce flicker
@@ -253,14 +253,15 @@ namespace BarangayCogonEventManagementSystem
 
             if (e.ColumnIndex == actionColumn.Index)
             {
-                e.PaintBackground(e.ClipBounds, true);
-                e.Handled = true;
+                // Paint all parts except content to ensure consistent borders
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
 
                 // Check if this is a placeholder row (id will be 0 or null)
                 var idValue = dgvRecentRegistrations.Rows[e.RowIndex].Cells["id"].Value;
                 if (idValue == null || Convert.ToInt32(idValue) == 0)
                 {
                     // This is the placeholder row, don't draw the action button
+                    e.Handled = true;
                     return;
                 }
 
@@ -286,6 +287,8 @@ namespace BarangayCogonEventManagementSystem
                     e.Graphics.FillPath(viewBrush, viewPath);
                     e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
                 }
+
+                e.Handled = true;
             }
         }
 
@@ -382,36 +385,49 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                // Generate QR code
-                string qrText = $"{eventName}_{userName}_{Guid.NewGuid()}";
-                string folderPath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes");
-                Directory.CreateDirectory(folderPath);
-                string fileName = $"{eventName}_{userName}.png".Replace(" ", "_");
-                string fullPath = Path.Combine(folderPath, fileName);
+                // Show confirmation dialog before approving
+                DialogResult confirmResult = MessageBox.Show(
+                    $"Do you want to approve this registration?\n\n" +
+                    $"Event: {eventName}\n" +
+                    $"User: {userName}\n\n" +
+                    $"A QR code will be generated for this registration.",
+                    "Confirm Approval",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
 
-                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q))
-                using (QRCode qrCode = new QRCode(qrCodeData))
-                using (Bitmap qrImage = qrCode.GetGraphic(6))
+                if (confirmResult == DialogResult.Yes)
                 {
-                    qrImage.Save(fullPath);
-                }
+                    // Generate QR code
+                    string qrText = $"{eventName}_{userName}_{Guid.NewGuid()}";
+                    string folderPath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes");
+                    Directory.CreateDirectory(folderPath);
+                    string fileName = $"{eventName}_{userName}.png".Replace(" ", "_");
+                    string fullPath = Path.Combine(folderPath, fileName);
 
-                // Update database
-                string query = @"UPDATE registrations 
-                                 SET status='Approved', qr_code=@qr 
-                                 WHERE id=@id";
-                MySqlParameter[] parameters = {
-                    new MySqlParameter("@qr", qrText),
-                    new MySqlParameter("@id", registrationId)
-                };
+                    using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                    using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q))
+                    using (QRCode qrCode = new QRCode(qrCodeData))
+                    using (Bitmap qrImage = qrCode.GetGraphic(6))
+                    {
+                        qrImage.Save(fullPath);
+                    }
 
-                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
-                if (result > 0)
-                {
-                    MessageBox.Show($"✓ Registration approved successfully!\n\nUser: {userName}\nEvent: {eventName}",
-                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    LoadDashboardData();
+                    // Update database
+                    string query = @"UPDATE registrations 
+                                     SET status='Approved', qr_code=@qr 
+                                     WHERE id=@id";
+                    MySqlParameter[] parameters = {
+                        new MySqlParameter("@qr", qrText),
+                        new MySqlParameter("@id", registrationId)
+                    };
+
+                    int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
+                    if (result > 0)
+                    {
+                        MessageBox.Show($"✓ Registration approved successfully!\n\nUser: {userName}\nEvent: {eventName}",
+                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadDashboardData();
+                    }
                 }
             }
             catch (Exception ex)
@@ -706,7 +722,7 @@ namespace BarangayCogonEventManagementSystem
         {
             HighlightNav(btnRegistrations);
             lblTitle.Text = "Registrations";
-            OpenChild(new frmApproveRegistrations());
+            OpenChild(new frmRegistrations());
         }
 
         private void btnReports_Click(object sender, EventArgs e)

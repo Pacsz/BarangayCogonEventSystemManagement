@@ -24,6 +24,7 @@
             this.dgvEvents.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvEvents.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
             this.dgvEvents.ColumnHeadersHeight = 45;
             this.dgvEvents.Location = new System.Drawing.Point(20, 80);
             this.dgvEvents.Name = "dgvEvents";

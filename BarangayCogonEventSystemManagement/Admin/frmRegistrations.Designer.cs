@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace BarangayCogonEventManagementSystem
 {
-    partial class frmApproveRegistrations
+    partial class frmRegistrations
     {
         private IContainer components = null;
         private DataGridView dgvRegistrations;
@@ -37,7 +37,7 @@ namespace BarangayCogonEventManagementSystem
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvRegistrations.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.dgvRegistrations.BackgroundColor = System.Drawing.Color.White;
+            this.dgvRegistrations.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
             this.dgvRegistrations.ColumnHeadersHeight = 40;
             this.dgvRegistrations.Location = new System.Drawing.Point(43, 46);
             this.dgvRegistrations.Name = "dgvRegistrations";

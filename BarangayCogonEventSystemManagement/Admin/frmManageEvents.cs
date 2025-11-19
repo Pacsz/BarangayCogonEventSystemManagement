@@ -69,6 +69,7 @@ namespace BarangayCogonEventManagementSystem
         public frmManageEvents()
         {
             InitializeComponent();
+            this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenu();
             CustomizeDataGridView();
             LoadEvents();
@@ -133,14 +134,14 @@ namespace BarangayCogonEventManagementSystem
             dgvEvents.AllowUserToAddRows = false;
             dgvEvents.ReadOnly = true;
 
-            // GENERAL GRID SETTINGS - Match mainPanel background
+            // GENERAL GRID SETTINGS - Match user dashboard style
             dgvEvents.BackgroundColor = Color.FromArgb(46, 51, 73);
             dgvEvents.BorderStyle = BorderStyle.None;
             dgvEvents.GridColor = Color.FromArgb(60, 65, 90);
             dgvEvents.EnableHeadersVisualStyles = false;
             dgvEvents.CellBorderStyle = DataGridViewCellBorderStyle.Single;
 
-            // HEADER STYLE - Match sidebar color
+            // HEADER STYLE
             dgvEvents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             dgvEvents.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(24, 30, 54);
             dgvEvents.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
@@ -151,7 +152,7 @@ namespace BarangayCogonEventManagementSystem
             dgvEvents.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold);
             dgvEvents.ColumnHeadersHeight = 45;
 
-            // CELL STYLE - Match mainPanel background
+            // CELL STYLE
             dgvEvents.DefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvEvents.DefaultCellStyle.ForeColor = Color.White;
             dgvEvents.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
@@ -161,10 +162,10 @@ namespace BarangayCogonEventManagementSystem
             dgvEvents.RowHeadersVisible = false;
             dgvEvents.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // Alternating rows
-            dgvEvents.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(37, 42, 64);
+            // Alternating rows - SAME color as default cells for consistency
+            dgvEvents.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvEvents.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
-            dgvEvents.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(37, 42, 64);
+            dgvEvents.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvEvents.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
 
             // Enable double buffering
@@ -273,8 +274,8 @@ namespace BarangayCogonEventManagementSystem
 
             if (e.ColumnIndex == actionColumn.Index)
             {
-                e.PaintBackground(e.ClipBounds, true);
-                e.Handled = true;
+                // Paint all parts except content to ensure consistent borders
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
 
                 Rectangle cellBounds = e.CellBounds;
                 int buttonWidth = 70;
@@ -296,6 +297,8 @@ namespace BarangayCogonEventManagementSystem
                     e.Graphics.FillPath(viewBrush, viewPath);
                     e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
                 }
+                
+                e.Handled = true;
             }
         }
 
@@ -572,42 +575,71 @@ namespace BarangayCogonEventManagementSystem
 
                     if (eventData == null)
                     {
-                        // Add new event
-                        string query = @"INSERT INTO events (name, description, date, time, venue, type, organizer)
-                                         VALUES (@name, @description, @date, @time, @venue, @type, @organizer)";
-                        MySqlParameter[] parameters = {
-                            new MySqlParameter("@name", txtName.Text),
-                            new MySqlParameter("@description", txtDesc.Text),
-                            new MySqlParameter("@date", dtpDate.Value.Date),
-                            new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
-                            new MySqlParameter("@venue", txtVenue.Text),
-                            new MySqlParameter("@type", cboType.Text),
-                            new MySqlParameter("@organizer", txtOrganizer.Text)
-                        };
-                        DatabaseHelper.ExecuteNonQuery(query, parameters);
-                        MessageBox.Show("Event added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Show confirmation dialog before adding event
+                        DialogResult confirmResult = MessageBox.Show(
+                            $"Do you want to add this event?\n\n" +
+                            $"Event Name: {txtName.Text}\n" +
+                            $"Date: {dtpDate.Value.ToString("MMM dd, yyyy")}\n" +
+                            $"Time: {dtpTime.Value.ToString("h:mm tt")}\n" +
+                            $"Venue: {txtVenue.Text}",
+                            "Confirm Add Event",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
+
+                        if (confirmResult == DialogResult.Yes)
+                        {
+                            // Add new event
+                            string query = @"INSERT INTO events (name, description, date, time, venue, type, organizer)
+                                             VALUES (@name, @description, @date, @time, @venue, @type, @organizer)";
+                            MySqlParameter[] parameters = {
+                                new MySqlParameter("@name", txtName.Text),
+                                new MySqlParameter("@description", txtDesc.Text),
+                                new MySqlParameter("@date", dtpDate.Value.Date),
+                                new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
+                                new MySqlParameter("@venue", txtVenue.Text),
+                                new MySqlParameter("@type", cboType.Text),
+                                new MySqlParameter("@organizer", txtOrganizer.Text)
+                            };
+                            DatabaseHelper.ExecuteNonQuery(query, parameters);
+                            MessageBox.Show("Event added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LoadEvents();
+                            eventForm.Close();
+                        }
                     }
                     else
                     {
-                        // Update existing event
-                        string query = @"UPDATE events SET name=@name, description=@description, date=@date, 
-                                         time=@time, venue=@venue, type=@type, organizer=@organizer WHERE id=@id";
-                        MySqlParameter[] parameters = {
-                            new MySqlParameter("@id", eventData["id"]),
-                            new MySqlParameter("@name", txtName.Text),
-                            new MySqlParameter("@description", txtDesc.Text),
-                            new MySqlParameter("@date", dtpDate.Value.Date),
-                            new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
-                            new MySqlParameter("@venue", txtVenue.Text),
-                            new MySqlParameter("@type", cboType.Text),
-                            new MySqlParameter("@organizer", txtOrganizer.Text)
-                        };
-                        DatabaseHelper.ExecuteNonQuery(query, parameters);
-                        MessageBox.Show("Event updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                        // Show confirmation dialog before updating event
+                        DialogResult confirmResult = MessageBox.Show(
+                            $"Do you want to update this event?\n\n" +
+                            $"Event Name: {txtName.Text}\n" +
+                            $"Date: {dtpDate.Value.ToString("MMM dd, yyyy")}\n" +
+                            $"Time: {dtpTime.Value.ToString("h:mm tt")}\n" +
+                            $"Venue: {txtVenue.Text}",
+                            "Confirm Update Event",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question);
 
-                    LoadEvents();
-                    eventForm.Close();
+                        if (confirmResult == DialogResult.Yes)
+                        {
+                            // Update existing event
+                            string query = @"UPDATE events SET name=@name, description=@description, date=@date, 
+                                             time=@time, venue=@venue, type=@type, organizer=@organizer WHERE id=@id";
+                            MySqlParameter[] parameters = {
+                                new MySqlParameter("@id", eventData["id"]),
+                                new MySqlParameter("@name", txtName.Text),
+                                new MySqlParameter("@description", txtDesc.Text),
+                                new MySqlParameter("@date", dtpDate.Value.Date),
+                                new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
+                                new MySqlParameter("@venue", txtVenue.Text),
+                                new MySqlParameter("@type", cboType.Text),
+                                new MySqlParameter("@organizer", txtOrganizer.Text)
+                            };
+                            DatabaseHelper.ExecuteNonQuery(query, parameters);
+                            MessageBox.Show("Event updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LoadEvents();
+                            eventForm.Close();
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

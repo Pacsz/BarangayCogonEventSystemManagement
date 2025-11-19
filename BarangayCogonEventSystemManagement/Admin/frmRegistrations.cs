@@ -9,11 +9,12 @@ using QRCoder;
 
 namespace BarangayCogonEventManagementSystem
 {
-    public partial class frmApproveRegistrations : Form
+    public partial class frmRegistrations : Form
     {
-        public frmApproveRegistrations()
+        public frmRegistrations()
         {
             InitializeComponent();
+            this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenuStyling();
             CustomizeDataGridView();
             LoadPendingRegistrations();
@@ -77,38 +78,38 @@ namespace BarangayCogonEventManagementSystem
             dgvRegistrations.AllowUserToAddRows = false;
             dgvRegistrations.ReadOnly = true;
 
-            // GENERAL GRID SETTINGS - Match mainPanel background
+            // GENERAL GRID SETTINGS - Match user dashboard style
             dgvRegistrations.BackgroundColor = Color.FromArgb(46, 51, 73);
             dgvRegistrations.BorderStyle = BorderStyle.None;
             dgvRegistrations.GridColor = Color.FromArgb(60, 65, 90);
             dgvRegistrations.EnableHeadersVisualStyles = false;
             dgvRegistrations.CellBorderStyle = DataGridViewCellBorderStyle.Single;
 
-            // HEADER STYLE - Match sidebar color (same color when selected)
+            // HEADER STYLE
             dgvRegistrations.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             dgvRegistrations.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(24, 30, 54);
             dgvRegistrations.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvRegistrations.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 30, 54); // Same as normal background
+            dgvRegistrations.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 30, 54);
             dgvRegistrations.ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.White;
             dgvRegistrations.AdvancedColumnHeadersBorderStyle.All = DataGridViewAdvancedCellBorderStyle.Single;
             dgvRegistrations.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
             dgvRegistrations.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 10, FontStyle.Bold);
             dgvRegistrations.ColumnHeadersHeight = 45;
 
-            // CELL STYLE - Match mainPanel background (keep same color when selected)
+            // CELL STYLE
             dgvRegistrations.DefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvRegistrations.DefaultCellStyle.ForeColor = Color.White;
-            dgvRegistrations.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73); // Same as normal background
+            dgvRegistrations.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvRegistrations.DefaultCellStyle.SelectionForeColor = Color.White;
             dgvRegistrations.DefaultCellStyle.Font = new Font("Segoe UI", 10);
             dgvRegistrations.RowTemplate.Height = 60;
             dgvRegistrations.RowHeadersVisible = false;
             dgvRegistrations.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // Alternating rows - slightly darker for subtle contrast (same when selected)
-            dgvRegistrations.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(37, 42, 64);
+            // Alternating rows - SAME color as default cells for consistency
+            dgvRegistrations.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvRegistrations.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
-            dgvRegistrations.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(37, 42, 64); // Same as normal background
+            dgvRegistrations.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvRegistrations.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
 
             // Enable double buffering to reduce flicker
@@ -201,8 +202,8 @@ namespace BarangayCogonEventManagementSystem
 
             if (e.ColumnIndex == actionColumn.Index)
             {
-                e.PaintBackground(e.ClipBounds, true);
-                e.Handled = true;
+                // Paint all parts except content to ensure consistent borders
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
 
                 Rectangle cellBounds = e.CellBounds;
 
@@ -226,6 +227,8 @@ namespace BarangayCogonEventManagementSystem
                     e.Graphics.FillPath(viewBrush, viewPath);
                     e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
                 }
+
+                e.Handled = true;
             }
         }
 
@@ -346,36 +349,49 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                // Generate QR code
-                string qrText = $"{eventName}_{userName}_{Guid.NewGuid()}";
-                string folderPath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes");
-                Directory.CreateDirectory(folderPath);
-                string fileName = $"{eventName}_{userName}.png".Replace(" ", "_");
-                string fullPath = Path.Combine(folderPath, fileName);
+                // Show confirmation dialog before approving
+                DialogResult confirmResult = MessageBox.Show(
+                    $"Do you want to approve this registration?\n\n" +
+                    $"Event: {eventName}\n" +
+                    $"User: {userName}\n\n" +
+                    $"A QR code will be generated for this registration.",
+                    "Confirm Approval",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
 
-                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q))
-                using (QRCode qrCode = new QRCode(qrCodeData))
-                using (Bitmap qrImage = qrCode.GetGraphic(6))
+                if (confirmResult == DialogResult.Yes)
                 {
-                    qrImage.Save(fullPath);
-                }
+                    // Generate QR code
+                    string qrText = $"{eventName}_{userName}_{Guid.NewGuid()}";
+                    string folderPath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes");
+                    Directory.CreateDirectory(folderPath);
+                    string fileName = $"{eventName}_{userName}.png".Replace(" ", "_");
+                    string fullPath = Path.Combine(folderPath, fileName);
 
-                // Update database
-                string query = @"UPDATE registrations 
-                                 SET status='Approved', qr_code=@qr 
-                                 WHERE id=@id";
-                MySqlParameter[] parameters = {
-                    new MySqlParameter("@qr", qrText),
-                    new MySqlParameter("@id", registrationId)
-                };
+                    using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                    using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q))
+                    using (QRCode qrCode = new QRCode(qrCodeData))
+                    using (Bitmap qrImage = qrCode.GetGraphic(6))
+                    {
+                        qrImage.Save(fullPath);
+                    }
 
-                int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
-                if (result > 0)
-                {
-                    MessageBox.Show($"Registration approved!\nQR code saved at:\n{fullPath}", 
-                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    LoadPendingRegistrations();
+                    // Update database
+                    string query = @"UPDATE registrations 
+                                     SET status='Approved', qr_code=@qr 
+                                     WHERE id=@id";
+                    MySqlParameter[] parameters = {
+                        new MySqlParameter("@qr", qrText),
+                        new MySqlParameter("@id", registrationId)
+                    };
+
+                    int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
+                    if (result > 0)
+                    {
+                        MessageBox.Show($"Registration approved!\nQR code saved at:\n{fullPath}", 
+                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadPendingRegistrations();
+                    }
                 }
             }
             catch (Exception ex)

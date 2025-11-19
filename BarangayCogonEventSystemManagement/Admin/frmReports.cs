@@ -216,45 +216,45 @@ namespace BarangayCogonEventManagementSystem
             dgvReports.AllowUserToAddRows = false;
             dgvReports.ReadOnly = true;
 
-            // GENERAL GRID SETTINGS - Match mainPanel background
+            // GENERAL GRID SETTINGS - Match user dashboard style
             dgvReports.BackgroundColor = Color.FromArgb(46, 51, 73);
             dgvReports.BorderStyle = BorderStyle.None;
             dgvReports.GridColor = Color.FromArgb(60, 65, 90);
             dgvReports.EnableHeadersVisualStyles = false;
             dgvReports.CellBorderStyle = DataGridViewCellBorderStyle.Single;
 
-            // HEADER STYLE - Match sidebar color (same color when selected)
+            // HEADER STYLE
             dgvReports.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             dgvReports.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(24, 30, 54);
             dgvReports.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvReports.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 30, 54); // Same as normal background
+            dgvReports.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(24, 30, 54);
             dgvReports.ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.White;
             dgvReports.AdvancedColumnHeadersBorderStyle.All = DataGridViewAdvancedCellBorderStyle.Single;
             dgvReports.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
             dgvReports.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Segoe UI Semibold", 10, FontStyle.Bold);
             dgvReports.ColumnHeadersHeight = 45;
 
-            // CELL STYLE - Match mainPanel background (keep same color when selected)
+            // CELL STYLE
             dgvReports.DefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvReports.DefaultCellStyle.ForeColor = Color.White;
-            dgvReports.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73); // Same as normal background
+            dgvReports.DefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvReports.DefaultCellStyle.SelectionForeColor = Color.White;
             dgvReports.DefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 10);
             dgvReports.RowTemplate.Height = 60;
             dgvReports.RowHeadersVisible = false;
             dgvReports.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // Alternating rows - slightly darker for subtle contrast (same when selected)
-            dgvReports.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(37, 42, 64);
+            // Alternating rows - SAME color as default cells for consistency
+            dgvReports.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(46, 51, 73);
             dgvReports.AlternatingRowsDefaultCellStyle.ForeColor = Color.White;
-            dgvReports.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(37, 42, 64); // Same as normal background
+            dgvReports.AlternatingRowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(46, 51, 73);
             dgvReports.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
 
             // Enable double buffering to reduce flicker
             typeof(DataGridView).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty,
                 null, dgvReports, new object[] { true });
-        }
+       }
 
         private void StyleButtons()
         {
