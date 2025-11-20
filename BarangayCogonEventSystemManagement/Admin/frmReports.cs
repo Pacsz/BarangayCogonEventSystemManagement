@@ -327,13 +327,13 @@ namespace BarangayCogonEventManagementSystem
             {
                 string query = @"
                 SELECT 
-                    e.id, e.name AS 'Event Name', e.date AS 'Date', e.type AS 'Type',
+                    e.id, e.name AS 'Event Name', e.start_datetime AS 'Start DateTime', e.type AS 'Type',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'attendee' AND r.status = 'Approved') AS 'Attendees',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'volunteer' AND r.status = 'Approved') AS 'Volunteers',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Approved') AS 'Registered',
                     (SELECT COUNT(*) FROM attendance a INNER JOIN registrations r ON a.registration_id = r.id WHERE r.event_id = e.id) AS 'Present',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Pending') AS 'Pending'
-                FROM events e ORDER BY e.date DESC;";
+                FROM events e ORDER BY e.start_datetime DESC;";
 
                 DataTable dt = DatabaseHelper.ExecuteQuery(query);
                 dgvReports.Rows.Clear();
@@ -343,73 +343,118 @@ namespace BarangayCogonEventManagementSystem
                 {
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", Visible = false });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "event_name", HeaderText = "Event Name", FillWeight = 30 });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "date", HeaderText = "Date", FillWeight = 15 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "date", HeaderText = "Event Date", FillWeight = 15 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", HeaderText = "Type", FillWeight = 18 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "registered", HeaderText = "Registered", FillWeight = 12 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "present", HeaderText = "Present", FillWeight = 12 });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Rate", FillWeight = 13 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Attendance %", FillWeight = 13 });
                 }
 
                 int totalEvents = dt.Rows.Count;
                 int totalAttendees = 0, totalVolunteers = 0, totalRegistered = 0, totalPresent = 0, totalPending = 0, completed = 0;
 
-                foreach (DataRow dr in dt.Rows)
+                // Check if there's data
+                if (dt.Rows.Count == 0)
                 {
-                    int attendees = Convert.ToInt32(dr["Attendees"]);
-                    int volunteers = Convert.ToInt32(dr["Volunteers"]);
-                    int registered = Convert.ToInt32(dr["Registered"]);
-                    int present = Convert.ToInt32(dr["Present"]);
-                    int pending = Convert.ToInt32(dr["Pending"]);
+                    // Add placeholder row when no data
+                    int placeholderIndex = dgvReports.Rows.Add(
+                        0, // id
+                        "No events available for reporting yet", // event_name (placeholder message)
+                        "", // date
+                        "", // type
+                        "", // registered
+                        "", // present
+                        ""  // rate
+                    );
 
-                    totalAttendees += attendees;
-                    totalVolunteers += volunteers;
-                    totalRegistered += registered;
-                    totalPresent += present;
-                    totalPending += pending;
+                    // Style the placeholder row
+                    DataGridViewRow placeholderRow = dgvReports.Rows[placeholderIndex];
+                    placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
+                    placeholderRow.DefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 10, FontStyle.Italic);
+                    placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-                    DateTime eventDate = Convert.ToDateTime(dr["Date"]);
-                    if (eventDate < DateTime.Now) completed++;
+                    // Update stat cards with zeros
+                    UpdateStatCards(0, 0, 0, 0);
 
-                    double rate = registered > 0 ? ((double)present / registered) * 100 : 0;
-                    string rateStr = rate > 0 ? (rate >= 90 ? "🟢 " : rate >= 70 ? "🟡 " : "🔴 ") + rate.ToString("F1") + "%" : "N/A";
-
-                    int idx = dgvReports.Rows.Add(dr["id"], dr["Event Name"], eventDate.ToString("MMM dd"), 
-                        dr["Type"], registered, present, rateStr);
-
-                    // Color rows by performance
-                    if (rate >= 90)
-                    {
-                        dgvReports.Rows[idx].DefaultCellStyle.BackColor = Color.FromArgb(30, 50, 40);
-                        dgvReports.Rows[idx].DefaultCellStyle.SelectionBackColor = Color.FromArgb(30, 50, 40);
-                    }
-                    else if (rate > 0 && rate < 70)
-                    {
-                        dgvReports.Rows[idx].DefaultCellStyle.BackColor = Color.FromArgb(50, 30, 35);
-                        dgvReports.Rows[idx].DefaultCellStyle.SelectionBackColor = Color.FromArgb(50, 30, 35);
-                    }
+                    // Show empty summary
+                    lblSummaryData.Text = 
+                        $"📅 EVENTS\n" +
+                        $"  • Total: 0\n" +
+                        $"  • Completed: 0\n" +
+                        $"  • Upcoming: 0\n\n" +
+                        $"👥 PARTICIPANTS\n" +
+                        $"  • Attendees: 0\n" +
+                        $"  • Volunteers: 0\n" +
+                        $"  • Total Registered: 0\n\n" +
+                        $"✓ ATTENDANCE\n" +
+                        $"  • Total Present: 0\n" +
+                        $"  • Overall Rate: 0.0%\n\n" +
+                        $"⏳ PENDING\n" +
+                        $"  • Awaiting Approval: 0\n\n" +
+                        $"📈 AVERAGES\n" +
+                        $"  • Attendees/Event: 0.0\n" +
+                        $"  • Volunteers/Event: 0.0";
                 }
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        int attendees = Convert.ToInt32(dr["Attendees"]);
+                        int volunteers = Convert.ToInt32(dr["Volunteers"]);
+                        int registered = Convert.ToInt32(dr["Registered"]);
+                        int present = Convert.ToInt32(dr["Present"]);
+                        int pending = Convert.ToInt32(dr["Pending"]);
 
-                double overallRate = totalRegistered > 0 ? ((double)totalPresent / totalRegistered) * 100 : 0;
-                UpdateStatCards(totalEvents, totalRegistered, overallRate, totalPending);
+                        totalAttendees += attendees;
+                        totalVolunteers += volunteers;
+                        totalRegistered += registered;
+                        totalPresent += present;
+                        totalPending += pending;
 
-                // Beautiful formatted summary with icons
-                lblSummaryData.Text = 
-                    $"📅 EVENTS\n" +
-                    $"  • Total: {totalEvents}\n" +
-                    $"  • Completed: {completed}\n" +
-                    $"  • Upcoming: {totalEvents - completed}\n\n" +
-                    $"👥 PARTICIPANTS\n" +
-                    $"  • Attendees: {totalAttendees}\n" +
-                    $"  • Volunteers: {totalVolunteers}\n" +
-                    $"  • Total Registered: {totalRegistered}\n\n" +
-                    $"✓ ATTENDANCE\n" +
-                    $"  • Total Present: {totalPresent}\n" +
-                    $"  • Overall Rate: {overallRate:F1}%\n\n" +
-                    $"⏳ PENDING\n" +
-                    $"  • Awaiting Approval: {totalPending}\n\n" +
-                    $"📈 AVERAGES\n" +
-                    $"  • Attendees/Event: {(totalEvents > 0 ? (double)totalAttendees / totalEvents : 0):F1}\n" +
-                    $"  • Volunteers/Event: {(totalEvents > 0 ? (double)totalVolunteers / totalEvents : 0):F1}";
+                        DateTime eventDate = Convert.ToDateTime(dr["Start DateTime"]);
+                        if (eventDate < DateTime.Now) completed++;
+
+                        double rate = registered > 0 ? ((double)present / registered) * 100 : 0;
+                        string rateStr = rate > 0 ? (rate >= 90 ? "🟢 " : rate >= 70 ? "🟡 " : "🔴 ") + rate.ToString("F1") + "%" : "N/A";
+
+                        int idx = dgvReports.Rows.Add(dr["id"], dr["Event Name"], eventDate.ToString("MMM dd"), 
+                            dr["Type"], registered, present, rateStr);
+
+                        // Color rows by performance
+                        if (rate >= 90)
+                        {
+                            dgvReports.Rows[idx].DefaultCellStyle.BackColor = Color.FromArgb(30, 50, 40);
+                            dgvReports.Rows[idx].DefaultCellStyle.SelectionBackColor = Color.FromArgb(30, 50, 40);
+                        }
+                        else if (rate > 0 && rate < 70)
+                        {
+                            dgvReports.Rows[idx].DefaultCellStyle.BackColor = Color.FromArgb(50, 30, 35);
+                            dgvReports.Rows[idx].DefaultCellStyle.SelectionBackColor = Color.FromArgb(50, 30, 35);
+                        }
+                    }
+
+                    double overallRate = totalRegistered > 0 ? ((double)totalPresent / totalRegistered) * 100 : 0;
+                    UpdateStatCards(totalEvents, totalRegistered, overallRate, totalPending);
+
+                    // Beautiful formatted summary with icons
+                    lblSummaryData.Text = 
+                        $"📅 EVENTS\n" +
+                        $"  • Total: {totalEvents}\n" +
+                        $"  • Completed: {completed}\n" +
+                        $"  • Upcoming: {totalEvents - completed}\n\n" +
+                        $"👥 PARTICIPANTS\n" +
+                        $"  • Attendees: {totalAttendees}\n" +
+                        $"  • Volunteers: {totalVolunteers}\n" +
+                        $"  • Total Registered: {totalRegistered}\n\n" +
+                        $"✓ ATTENDANCE\n" +
+                        $"  • Total Present: {totalPresent}\n" +
+                        $"  • Overall Rate: {overallRate:F1}%\n\n" +
+                        $"⏳ PENDING\n" +
+                        $"  • Awaiting Approval: {totalPending}\n\n" +
+                        $"📈 AVERAGES\n" +
+                        $"  • Attendees/Event: {(totalEvents > 0 ? (double)totalAttendees / totalEvents : 0):F1}\n" +
+                        $"  • Volunteers/Event: {(totalEvents > 0 ? (double)totalVolunteers / totalEvents : 0):F1}";
+                }
 
                 dgvReports.ClearSelection();
             }

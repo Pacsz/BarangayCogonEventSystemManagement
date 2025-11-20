@@ -193,17 +193,17 @@ namespace BarangayCogonEventManagementSystem
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "date",
-                HeaderText = "Date",
+                HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 14
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "time",
-                HeaderText = "Time",
+                HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 10
+                FillWeight = 15
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -277,6 +277,15 @@ namespace BarangayCogonEventManagementSystem
                 // Paint all parts except content to ensure consistent borders
                 e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
 
+                // Check if this is a placeholder row (id will be 0 or null)
+                var idValue = dgvEvents.Rows[e.RowIndex].Cells["id"].Value;
+                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                {
+                    // This is the placeholder row, don't draw the action button
+                    e.Handled = true;
+                    return;
+                }
+
                 Rectangle cellBounds = e.CellBounds;
                 int buttonWidth = 70;
                 int buttonHeight = 30;
@@ -306,29 +315,63 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                string query = "SELECT id, name, description, date, time, venue, type, organizer FROM events ORDER BY date DESC";
+                string query = @"SELECT 
+                                    id, 
+                                    name, 
+                                    description, 
+                                    start_datetime, 
+                                    end_datetime, 
+                                    CASE 
+                                        WHEN DATE(start_datetime) = DATE(end_datetime) THEN DATE_FORMAT(start_datetime, '%b %d, %Y')
+                                        ELSE CONCAT(DATE_FORMAT(start_datetime, '%b %d'), ' - ', DATE_FORMAT(end_datetime, '%b %d, %Y'))
+                                    END AS date_display,
+                                    CONCAT(DATE_FORMAT(start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(end_datetime, '%h:%i %p')) AS time_display,
+                                    venue, 
+                                    type, 
+                                    organizer 
+                                FROM events 
+                                ORDER BY start_datetime DESC";
                 DataTable dt = DatabaseHelper.ExecuteQuery(query);
 
                 dgvEvents.Rows.Clear();
 
-                foreach (DataRow dr in dt.Rows)
+                if (dt.Rows.Count == 0)
                 {
-                    // Format time properly
-                    TimeSpan timeValue = (TimeSpan)dr["time"];
-                    DateTime timeDisplay = DateTime.Today.Add(timeValue);
-                    string formattedTime = timeDisplay.ToString("h:mm tt");
-
-                    dgvEvents.Rows.Add(
-                        dr["id"],
-                        dr["name"],
-                        Convert.ToDateTime(dr["date"]).ToString("MMM dd, yyyy"),
-                        formattedTime,
-                        dr["venue"],
-                        dr["type"],
-                        dr["organizer"],
-                        dr["description"],
-                        ""
+                    // Add placeholder row when no data
+                    int placeholderIndex = dgvEvents.Rows.Add(
+                        0, // id
+                        "No events available yet", // name (placeholder message)
+                        "", // date
+                        "", // time
+                        "", // venue
+                        "", // type
+                        "", // organizer
+                        "", // description
+                        ""  // ActionColumn
                     );
+
+                    // Style the placeholder row
+                    DataGridViewRow placeholderRow = dgvEvents.Rows[placeholderIndex];
+                    placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
+                    placeholderRow.DefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                    placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                }
+                else
+                {
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        dgvEvents.Rows.Add(
+                            dr["id"],
+                            dr["name"],
+                            dr["date_display"],
+                            dr["time_display"],
+                            dr["venue"],
+                            dr["type"],
+                            dr["organizer"],
+                            dr["description"],
+                            ""
+                        );
+                    }
                 }
 
                 dgvEvents.ClearSelection();
@@ -346,7 +389,17 @@ namespace BarangayCogonEventManagementSystem
                 dgvEvents.Columns[e.ColumnIndex].Name == "ActionColumn")
             {
                 DataGridViewRow row = dgvEvents.Rows[e.RowIndex];
+                
+                // Check if this is a placeholder row (id will be 0 or null)
+                var idValue = row.Cells["id"].Value;
+                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                {
+                    // This is the placeholder row, do nothing
+                    return;
+                }
+                
                 int eventId = Convert.ToInt32(row.Cells["id"].Value);
+                string eventName = row.Cells["name"].Value?.ToString();
 
                 contextMenuActions.Items.Clear();
 
@@ -360,6 +413,12 @@ namespace BarangayCogonEventManagementSystem
                 deleteItem.Font = new Font("Segoe UI", 10F);
                 deleteItem.Click += (s, ev) => DeleteEvent(eventId);
                 contextMenuActions.Items.Add(deleteItem);
+
+                // Add View Attendees menu item
+                ToolStripMenuItem viewAttendeesItem = new ToolStripMenuItem("👥 View Attendees");
+                viewAttendeesItem.Font = new Font("Segoe UI", 10F);
+                viewAttendeesItem.Click += (s, ev) => ViewEventAttendees(eventId, eventName);
+                contextMenuActions.Items.Add(viewAttendeesItem);
 
                 Rectangle rect = dgvEvents.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
                 int buttonWidth = 70;
@@ -409,7 +468,7 @@ namespace BarangayCogonEventManagementSystem
             Form eventForm = new Form
             {
                 Text = title,
-                Size = new Size(500, 600),
+                Size = new Size(500, 650),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -423,7 +482,7 @@ namespace BarangayCogonEventManagementSystem
                 Text = title,
                 Font = new Font("Segoe UI", 14F, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = Color.Transparent,  // Remove background color
+                BackColor = Color.Transparent,
                 Dock = DockStyle.Top,
                 Height = 50,
                 TextAlign = ContentAlignment.MiddleCenter
@@ -437,13 +496,10 @@ namespace BarangayCogonEventManagementSystem
             Label lblDesc = new Label { Text = "Description:", Location = new Point(30, 140), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
             TextBox txtDesc = new TextBox { Location = new Point(30, 170), Size = new Size(420, 60), Font = new Font("Segoe UI", 11F), BackColor = Color.FromArgb(37, 42, 69), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Multiline = true };
 
-            // Date
-            // Note: DateTimePicker doesn't support BackColor/ForeColor styling on the main control
-            // Only the calendar dropdown can be customized
-            Label lblDate = new Label { Text = "Date:", Location = new Point(30, 240), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
+            // Start Date & Time
+            Label lblStartDateTime = new Label { Text = "Start Date & Time:", Location = new Point(30, 240), Size = new Size(140, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
             
-            // Create a panel to wrap the DateTimePicker for better visual integration
-            Panel pnlDate = new Panel
+            Panel pnlStartDate = new Panel
             {
                 Location = new Point(30, 270),
                 Size = new Size(200, 32),
@@ -452,24 +508,20 @@ namespace BarangayCogonEventManagementSystem
                 Padding = new Padding(1)
             };
             
-            DateTimePicker dtpDate = new DateTimePicker
+            DateTimePicker dtpStartDate = new DateTimePicker
             {
                 Location = new Point(1, 1),
                 Size = new Size(196, 28),
-                Font = new Font("Segoe UI", 9F),  // Reduced font size to match other inputs
+                Font = new Font("Segoe UI", 9F),
                 CalendarMonthBackground = Color.FromArgb(37, 42, 69),
                 CalendarForeColor = Color.White,
                 CalendarTitleBackColor = Color.FromArgb(24, 30, 54),
                 CalendarTitleForeColor = Color.White,
                 CalendarTrailingForeColor = Color.Gray
             };
-            pnlDate.Controls.Add(dtpDate);
+            pnlStartDate.Controls.Add(dtpStartDate);
             
-            // Time
-            Label lblTime = new Label { Text = "Time:", Location = new Point(250, 240), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
-            
-            // Create a panel to wrap the DateTimePicker for better visual integration
-            Panel pnlTime = new Panel
+            Panel pnlStartTime = new Panel
             {
                 Location = new Point(250, 270),
                 Size = new Size(200, 32),
@@ -478,11 +530,11 @@ namespace BarangayCogonEventManagementSystem
                 Padding = new Padding(1)
             };
             
-            DateTimePicker dtpTime = new DateTimePicker
+            DateTimePicker dtpStartTime = new DateTimePicker
             {
                 Location = new Point(1, 1),
                 Size = new Size(196, 28),
-                Font = new Font("Segoe UI", 9F),  // Reduced font size to match other inputs
+                Font = new Font("Segoe UI", 9F),
                 Format = DateTimePickerFormat.Time,
                 ShowUpDown = true,
                 CalendarMonthBackground = Color.FromArgb(37, 42, 69),
@@ -491,17 +543,66 @@ namespace BarangayCogonEventManagementSystem
                 CalendarTitleForeColor = Color.White,
                 CalendarTrailingForeColor = Color.Gray
             };
-            pnlTime.Controls.Add(dtpTime);
+            pnlStartTime.Controls.Add(dtpStartTime);
+
+            // End Date & Time
+            Label lblEndDateTime = new Label { Text = "End Date & Time:", Location = new Point(30, 310), Size = new Size(140, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
+            
+            Panel pnlEndDate = new Panel
+            {
+                Location = new Point(30, 340),
+                Size = new Size(200, 32),
+                BackColor = Color.FromArgb(37, 42, 69),
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(1)
+            };
+            
+            DateTimePicker dtpEndDate = new DateTimePicker
+            {
+                Location = new Point(1, 1),
+                Size = new Size(196, 28),
+                Font = new Font("Segoe UI", 9F),
+                CalendarMonthBackground = Color.FromArgb(37, 42, 69),
+                CalendarForeColor = Color.White,
+                CalendarTitleBackColor = Color.FromArgb(24, 30, 54),
+                CalendarTitleForeColor = Color.White,
+                CalendarTrailingForeColor = Color.Gray
+            };
+            pnlEndDate.Controls.Add(dtpEndDate);
+            
+            Panel pnlEndTime = new Panel
+            {
+                Location = new Point(250, 340),
+                Size = new Size(200, 32),
+                BackColor = Color.FromArgb(37, 42, 69),
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(1)
+            };
+            
+            DateTimePicker dtpEndTime = new DateTimePicker
+            {
+                Location = new Point(1, 1),
+                Size = new Size(196, 28),
+                Font = new Font("Segoe UI", 9F),
+                Format = DateTimePickerFormat.Time,
+                ShowUpDown = true,
+                CalendarMonthBackground = Color.FromArgb(37, 42, 69),
+                CalendarForeColor = Color.White,
+                CalendarTitleBackColor = Color.FromArgb(24, 30, 54),
+                CalendarTitleForeColor = Color.White,
+                CalendarTrailingForeColor = Color.Gray
+            };
+            pnlEndTime.Controls.Add(dtpEndTime);
 
             // Venue
-            Label lblVenue = new Label { Text = "Venue:", Location = new Point(30, 310), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
-            TextBox txtVenue = new TextBox { Location = new Point(30, 340), Size = new Size(420, 30), Font = new Font("Segoe UI", 11F), BackColor = Color.FromArgb(37, 42, 69), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
+            Label lblVenue = new Label { Text = "Venue:", Location = new Point(30, 380), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
+            TextBox txtVenue = new TextBox { Location = new Point(30, 410), Size = new Size(420, 30), Font = new Font("Segoe UI", 11F), BackColor = Color.FromArgb(37, 42, 69), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
 
             // Type
-            Label lblType = new Label { Text = "Type:", Location = new Point(30, 380), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
+            Label lblType = new Label { Text = "Type:", Location = new Point(30, 450), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
             ComboBox cboType = new ComboBox
             {
-                Location = new Point(30, 410),
+                Location = new Point(30, 480),
                 Size = new Size(200, 30),
                 Font = new Font("Segoe UI", 11F),
                 DropDownStyle = ComboBoxStyle.DropDownList,
@@ -514,18 +615,18 @@ namespace BarangayCogonEventManagementSystem
             // Set default value for Type when adding new event
             if (eventData == null)
             {
-                cboType.SelectedIndex = 0; // Default to "Community Service"
+                cboType.SelectedIndex = 0;
             }
 
             // Organizer
-            Label lblOrganizer = new Label { Text = "Organizer:", Location = new Point(250, 380), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
-            TextBox txtOrganizer = new TextBox { Location = new Point(250, 410), Size = new Size(200, 30), Font = new Font("Segoe UI", 11F), BackColor = Color.FromArgb(37, 42, 69), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
+            Label lblOrganizer = new Label { Text = "Organizer:", Location = new Point(250, 450), Size = new Size(120, 25), ForeColor = Color.White, Font = new Font("Segoe UI", 10F) };
+            TextBox txtOrganizer = new TextBox { Location = new Point(250, 480), Size = new Size(200, 30), Font = new Font("Segoe UI", 11F), BackColor = Color.FromArgb(37, 42, 69), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
 
             // Buttons with rounded corners
             RoundedButton btnSave = new RoundedButton
             {
                 Text = eventData == null ? "Add Event" : "Update Event",
-                Location = new Point(150, 480),
+                Location = new Point(150, 540),
                 Size = new Size(125, 45),
                 BackColor = Color.FromArgb(25, 118, 210),
                 ForeColor = Color.White,
@@ -539,7 +640,7 @@ namespace BarangayCogonEventManagementSystem
             RoundedButton btnCancel = new RoundedButton
             {
                 Text = "Cancel",
-                Location = new Point(280, 480),
+                Location = new Point(280, 540),
                 Size = new Size(100, 45),
                 BackColor = Color.FromArgb(211, 47, 47),
                 ForeColor = Color.White,
@@ -556,11 +657,27 @@ namespace BarangayCogonEventManagementSystem
             {
                 txtName.Text = eventData["name"].ToString();
                 txtDesc.Text = eventData["description"].ToString();
-                dtpDate.Value = Convert.ToDateTime(eventData["date"]);
-                dtpTime.Value = DateTime.Today.Add((TimeSpan)eventData["time"]);
+                
+                DateTime startDateTime = Convert.ToDateTime(eventData["start_datetime"]);
+                DateTime endDateTime = Convert.ToDateTime(eventData["end_datetime"]);
+                
+                dtpStartDate.Value = startDateTime.Date;
+                dtpStartTime.Value = startDateTime;
+                dtpEndDate.Value = endDateTime.Date;
+                dtpEndTime.Value = endDateTime;
+                
                 txtVenue.Text = eventData["venue"].ToString();
                 cboType.Text = eventData["type"].ToString();
                 txtOrganizer.Text = eventData["organizer"].ToString();
+            }
+            else
+            {
+                // Set default end time to 2 hours after start time
+                dtpStartTime.ValueChanged += (s, ev) =>
+                {
+                    dtpEndDate.Value = dtpStartDate.Value;
+                    dtpEndTime.Value = dtpStartTime.Value.AddHours(2);
+                };
             }
 
             btnSave.Click += (s, ev) =>
@@ -573,14 +690,25 @@ namespace BarangayCogonEventManagementSystem
                         return;
                     }
 
+                    // Combine date and time
+                    DateTime startDateTime = dtpStartDate.Value.Date.Add(dtpStartTime.Value.TimeOfDay);
+                    DateTime endDateTime = dtpEndDate.Value.Date.Add(dtpEndTime.Value.TimeOfDay);
+
+                    // Validate that end datetime is after start datetime
+                    if (endDateTime <= startDateTime)
+                    {
+                        MessageBox.Show("End date/time must be after start date/time.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
                     if (eventData == null)
                     {
                         // Show confirmation dialog before adding event
                         DialogResult confirmResult = MessageBox.Show(
                             $"Do you want to add this event?\n\n" +
                             $"Event Name: {txtName.Text}\n" +
-                            $"Date: {dtpDate.Value.ToString("MMM dd, yyyy")}\n" +
-                            $"Time: {dtpTime.Value.ToString("h:mm tt")}\n" +
+                            $"Start: {startDateTime.ToString("MMM dd, yyyy h:mm tt")}\n" +
+                            $"End: {endDateTime.ToString("MMM dd, yyyy h:mm tt")}\n" +
                             $"Venue: {txtVenue.Text}",
                             "Confirm Add Event",
                             MessageBoxButtons.YesNo,
@@ -589,13 +717,13 @@ namespace BarangayCogonEventManagementSystem
                         if (confirmResult == DialogResult.Yes)
                         {
                             // Add new event
-                            string query = @"INSERT INTO events (name, description, date, time, venue, type, organizer)
-                                             VALUES (@name, @description, @date, @time, @venue, @type, @organizer)";
+                            string query = @"INSERT INTO events (name, description, start_datetime, end_datetime, venue, type, organizer)
+                                             VALUES (@name, @description, @start_datetime, @end_datetime, @venue, @type, @organizer)";
                             MySqlParameter[] parameters = {
                                 new MySqlParameter("@name", txtName.Text),
                                 new MySqlParameter("@description", txtDesc.Text),
-                                new MySqlParameter("@date", dtpDate.Value.Date),
-                                new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
+                                new MySqlParameter("@start_datetime", startDateTime),
+                                new MySqlParameter("@end_datetime", endDateTime),
                                 new MySqlParameter("@venue", txtVenue.Text),
                                 new MySqlParameter("@type", cboType.Text),
                                 new MySqlParameter("@organizer", txtOrganizer.Text)
@@ -612,8 +740,8 @@ namespace BarangayCogonEventManagementSystem
                         DialogResult confirmResult = MessageBox.Show(
                             $"Do you want to update this event?\n\n" +
                             $"Event Name: {txtName.Text}\n" +
-                            $"Date: {dtpDate.Value.ToString("MMM dd, yyyy")}\n" +
-                            $"Time: {dtpTime.Value.ToString("h:mm tt")}\n" +
+                            $"Start: {startDateTime.ToString("MMM dd, yyyy h:mm tt")}\n" +
+                            $"End: {endDateTime.ToString("MMM dd, yyyy h:mm tt")}\n" +
                             $"Venue: {txtVenue.Text}",
                             "Confirm Update Event",
                             MessageBoxButtons.YesNo,
@@ -622,14 +750,14 @@ namespace BarangayCogonEventManagementSystem
                         if (confirmResult == DialogResult.Yes)
                         {
                             // Update existing event
-                            string query = @"UPDATE events SET name=@name, description=@description, date=@date, 
-                                             time=@time, venue=@venue, type=@type, organizer=@organizer WHERE id=@id";
+                            string query = @"UPDATE events SET name=@name, description=@description, start_datetime=@start_datetime, 
+                                             end_datetime=@end_datetime, venue=@venue, type=@type, organizer=@organizer WHERE id=@id";
                             MySqlParameter[] parameters = {
                                 new MySqlParameter("@id", eventData["id"]),
                                 new MySqlParameter("@name", txtName.Text),
                                 new MySqlParameter("@description", txtDesc.Text),
-                                new MySqlParameter("@date", dtpDate.Value.Date),
-                                new MySqlParameter("@time", dtpTime.Value.TimeOfDay),
+                                new MySqlParameter("@start_datetime", startDateTime),
+                                new MySqlParameter("@end_datetime", endDateTime),
                                 new MySqlParameter("@venue", txtVenue.Text),
                                 new MySqlParameter("@type", cboType.Text),
                                 new MySqlParameter("@organizer", txtOrganizer.Text)
@@ -652,10 +780,12 @@ namespace BarangayCogonEventManagementSystem
             eventForm.Controls.Add(txtName);
             eventForm.Controls.Add(lblDesc);
             eventForm.Controls.Add(txtDesc);
-            eventForm.Controls.Add(lblDate);
-            eventForm.Controls.Add(pnlDate);  // Add panel instead of dtpDate
-            eventForm.Controls.Add(lblTime);
-            eventForm.Controls.Add(pnlTime);  // Add panel instead of dtpTime
+            eventForm.Controls.Add(lblStartDateTime);
+            eventForm.Controls.Add(pnlStartDate);
+            eventForm.Controls.Add(pnlStartTime);
+            eventForm.Controls.Add(lblEndDateTime);
+            eventForm.Controls.Add(pnlEndDate);
+            eventForm.Controls.Add(pnlEndTime);
             eventForm.Controls.Add(lblVenue);
             eventForm.Controls.Add(txtVenue);
             eventForm.Controls.Add(lblType);
@@ -685,6 +815,20 @@ namespace BarangayCogonEventManagementSystem
                 {
                     MessageBox.Show("Error deleting event: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            }
+        }
+
+        private void ViewEventAttendees(int eventId, string eventName)
+        {
+            try
+            {
+                frmEventAttendees attendeesForm = new frmEventAttendees(eventId, eventName);
+                attendeesForm.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error opening attendees view: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

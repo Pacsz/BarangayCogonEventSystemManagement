@@ -101,17 +101,17 @@ namespace BarangayCogonEventManagementSystem
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_date",
-                HeaderText = "Date",
+                HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 17
             });
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_time",
-                HeaderText = "Time",
+                HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 17
             });
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -313,35 +313,53 @@ namespace BarangayCogonEventManagementSystem
 
                 if (confirmResult == DialogResult.Yes)
                 {
-                    // First, delete the rejected registration
-                    string deleteQuery = "DELETE FROM registrations WHERE event_id=@event_id AND user_id=@user_id";
-                    MySqlParameter[] deleteParams = {
-                        new MySqlParameter("@event_id", eventId),
-                        new MySqlParameter("@user_id", userId)
-                    };
-                    DatabaseHelper.ExecuteNonQuery(deleteQuery, deleteParams);
-
-                    // Get user role
-                    string roleQuery = "SELECT role FROM users WHERE id=@user_id";
-                    MySqlParameter[] roleParams = { new MySqlParameter("@user_id", userId) };
-                    DataTable dtRole = DatabaseHelper.ExecuteQuery(roleQuery, roleParams);
-                    string userRole = dtRole.Rows.Count > 0 ? dtRole.Rows[0]["role"].ToString() : "attendee";
-
-                    // Insert new registration
-                    string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, created_at)
-                                          VALUES (@event_id, @user_id, @role, 'Pending', NOW())";
-                    MySqlParameter[] insertParams = {
-                        new MySqlParameter("@event_id", eventId),
-                        new MySqlParameter("@user_id", userId),
-                        new MySqlParameter("@role", userRole)
-                    };
-
-                    int result = DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
-                    if (result > 0)
+                    try
                     {
-                        MessageBox.Show($"Successfully re-registered for '{eventName}'!\n\nPlease wait for admin approval.",
-                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        LoadMyEvents();
+                        // First, delete the rejected registration
+                        string deleteQuery = "DELETE FROM registrations WHERE event_id=@event_id AND user_id=@user_id";
+                        MySqlParameter[] deleteParams = {
+                            new MySqlParameter("@event_id", eventId),
+                            new MySqlParameter("@user_id", userId)
+                        };
+                        DatabaseHelper.ExecuteNonQuery(deleteQuery, deleteParams);
+
+                        // Get user role
+                        string roleQuery = "SELECT role FROM users WHERE id=@user_id";
+                        MySqlParameter[] roleParams = { new MySqlParameter("@user_id", userId) };
+                        DataTable dtRole = DatabaseHelper.ExecuteQuery(roleQuery, roleParams);
+                        string userRole = dtRole.Rows.Count > 0 ? dtRole.Rows[0]["role"].ToString() : "attendee";
+
+                        // Insert new registration with qr_code explicitly set to NULL
+                        string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, qr_code, created_at)
+                                              VALUES (@event_id, @user_id, @role, 'Pending', NULL, NOW())";
+                        MySqlParameter[] insertParams = {
+                            new MySqlParameter("@event_id", eventId),
+                            new MySqlParameter("@user_id", userId),
+                            new MySqlParameter("@role", userRole)
+                        };
+
+                        int result = DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
+                        if (result > 0)
+                        {
+                            MessageBox.Show($"Successfully re-registered for '{eventName}'!\n\nPlease wait for admin approval.",
+                                "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            LoadMyEvents();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Re-registration failed. Please try again.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    catch (MySqlException mysqlEx)
+                    {
+                        MessageBox.Show($"Database error: {mysqlEx.Message}\n\nError Code: {mysqlEx.Number}", 
+                            "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error registering: {ex.Message}\n\nPlease contact the administrator if this problem persists.",
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
@@ -360,15 +378,18 @@ namespace BarangayCogonEventManagementSystem
                                     r.id AS registration_id,
                                     e.id AS event_id,
                                     e.name AS event_name,
-                                    DATE_FORMAT(e.date, '%b %d, %Y') AS event_date,
-                                    e.time AS event_time,
+                                    CASE 
+                                        WHEN DATE(e.start_datetime) = DATE(e.end_datetime) THEN DATE_FORMAT(e.start_datetime, '%b %d, %Y')
+                                        ELSE CONCAT(DATE_FORMAT(e.start_datetime, '%b %d'), ' - ', DATE_FORMAT(e.end_datetime, '%b %d, %Y'))
+                                    END AS event_date,
+                                    CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
                                     r.role,
                                     r.status
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
                                 WHERE r.user_id = @user_id
-                                ORDER BY e.date DESC";
+                                ORDER BY e.start_datetime DESC";
 
                 MySqlParameter[] param = { new MySqlParameter("@user_id", userId) };
                 DataTable dt = DatabaseHelper.ExecuteQuery(query, param);

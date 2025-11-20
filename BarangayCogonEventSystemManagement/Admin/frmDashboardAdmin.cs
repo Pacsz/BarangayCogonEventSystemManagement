@@ -171,9 +171,9 @@ namespace BarangayCogonEventManagementSystem
             dgvRecentRegistrations.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "registration_date",
-                HeaderText = "Date",
+                HeaderText = "Registered On",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 23
             });
 
             dgvRecentRegistrations.Columns.Add(new DataGridViewTextBoxColumn

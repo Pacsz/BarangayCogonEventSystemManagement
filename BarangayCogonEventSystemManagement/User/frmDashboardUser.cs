@@ -108,7 +108,7 @@ namespace BarangayCogonEventManagementSystem
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_date",
-                HeaderText = "Date",
+                HeaderText = "Event Date",
                 ReadOnly = true,
                 FillWeight = 20
             });
@@ -116,9 +116,9 @@ namespace BarangayCogonEventManagementSystem
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_time",
-                HeaderText = "Time",
+                HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 20
             });
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -200,13 +200,16 @@ namespace BarangayCogonEventManagementSystem
                 string eventsQuery = @"SELECT 
                                         e.id AS event_id,
                                         e.name AS event_name,
-                                        DATE_FORMAT(e.date, '%b %d, %Y') AS event_date,
-                                        e.time AS event_time,
+                                        CASE 
+                                            WHEN DATE(e.start_datetime) = DATE(e.end_datetime) THEN DATE_FORMAT(e.start_datetime, '%b %d, %Y')
+                                            ELSE CONCAT(DATE_FORMAT(e.start_datetime, '%b %d'), ' - ', DATE_FORMAT(e.end_datetime, '%b %d, %Y'))
+                                        END AS event_date,
+                                        CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                         e.venue AS event_venue,
                                         e.type AS event_type
                                     FROM events e
-                                    WHERE e.date >= CURDATE()
-                                    ORDER BY e.date ASC, e.time ASC
+                                    WHERE e.start_datetime >= NOW()
+                                    ORDER BY e.start_datetime ASC
                                     LIMIT 10";
 
                 DataTable dtEvents = DatabaseHelper.ExecuteQuery(eventsQuery);

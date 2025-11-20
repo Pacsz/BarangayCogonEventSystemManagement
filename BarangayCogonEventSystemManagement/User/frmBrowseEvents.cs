@@ -175,17 +175,17 @@ namespace BarangayCogonEventSystemManagement.User
             dgvBrowse.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_date",
-                HeaderText = "Date",
+                HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 17
             });
 
             dgvBrowse.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "event_time",
-                HeaderText = "Time",
+                HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 17
             });
 
             dgvBrowse.Columns.Add(new DataGridViewTextBoxColumn
@@ -307,8 +307,24 @@ namespace BarangayCogonEventSystemManagement.User
                 {
                     try
                     {
-                        string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, created_at)
-                                              VALUES (@event_id, @user_id, @role, 'Pending', NOW())";
+                        // Check if user is already registered (safety check)
+                        string checkQuery = "SELECT id FROM registrations WHERE event_id=@event_id AND user_id=@user_id";
+                        MySqlParameter[] checkParams = {
+                            new MySqlParameter("@event_id", eventId),
+                            new MySqlParameter("@user_id", userId)
+                        };
+                        
+                        DataTable dtCheck = DatabaseHelper.ExecuteQuery(checkQuery, checkParams);
+                        if (dtCheck.Rows.Count > 0)
+                        {
+                            MessageBox.Show("You are already registered for this event.", "Already Registered",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            LoadBrowseEvents();
+                            return;
+                        }
+
+                        string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, qr_code, created_at)
+                                              VALUES (@event_id, @user_id, @role, 'Pending', NULL, NOW())";
 
                         MySqlParameter[] insertParams = {
                             new MySqlParameter("@event_id", eventId),
@@ -316,17 +332,45 @@ namespace BarangayCogonEventSystemManagement.User
                             new MySqlParameter("@role", userRole)
                         };
 
-                        DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
-
-                        MessageBox.Show($"Successfully registered for '{eventName}'!\n\nPlease wait for admin approval.",
-                            "Registered", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        int result = DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
                         
-                        // Reload the events to remove the just-registered event
-                        LoadBrowseEvents();
+                        if (result > 0)
+                        {
+                            MessageBox.Show($"Successfully registered for '{eventName}'!\n\nPlease wait for admin approval.",
+                                "Registered", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            
+                            // Reload the events to remove the just-registered event
+                            LoadBrowseEvents();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Registration failed. Please try again.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    catch (MySqlException mysqlEx)
+                    {
+                        // Handle MySQL specific errors
+                        if (mysqlEx.Number == 1062) // Duplicate entry error
+                        {
+                            MessageBox.Show("You are already registered for this event.", "Duplicate Registration",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            LoadBrowseEvents();
+                        }
+                        else if (mysqlEx.Number == 1452) // Foreign key constraint fails
+                        {
+                            MessageBox.Show("Event or user not found. Please refresh and try again.", "Database Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Database error: {mysqlEx.Message}\n\nError Code: {mysqlEx.Number}", 
+                                "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Error registering for event: " + ex.Message,
+                        MessageBox.Show($"Error registering for event: {ex.Message}\n\nPlease contact the administrator if this problem persists.",
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -341,12 +385,15 @@ namespace BarangayCogonEventSystemManagement.User
                 string query = @"SELECT 
                                     e.id AS event_id,
                                     e.name AS event_name,
-                                    DATE_FORMAT(e.date, '%b %d, %Y') AS event_date,
-                                    e.time AS event_time,
+                                    CASE 
+                                        WHEN DATE(e.start_datetime) = DATE(e.end_datetime) THEN DATE_FORMAT(e.start_datetime, '%b %d, %Y')
+                                        ELSE CONCAT(DATE_FORMAT(e.start_datetime, '%b %d'), ' - ', DATE_FORMAT(e.end_datetime, '%b %d, %Y'))
+                                    END AS event_date,
+                                    CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
                                     e.type AS event_type
                                 FROM events e
-                                WHERE e.date >= CURDATE()
+                                WHERE e.start_datetime >= NOW()
                                 AND e.id NOT IN (
                                     SELECT event_id FROM registrations WHERE user_id = @user_id
                                 )";
@@ -367,7 +414,7 @@ namespace BarangayCogonEventSystemManagement.User
                                 OR e.organizer LIKE @search)";
                 }
 
-                query += " ORDER BY e.date ASC, e.time ASC";
+                query += " ORDER BY e.start_datetime ASC";
 
                 // Prepare parameters
                 var paramsList = new System.Collections.Generic.List<MySqlParameter>();

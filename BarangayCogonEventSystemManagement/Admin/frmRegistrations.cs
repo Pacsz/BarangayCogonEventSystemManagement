@@ -205,6 +205,15 @@ namespace BarangayCogonEventManagementSystem
                 // Paint all parts except content to ensure consistent borders
                 e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
 
+                // Check if this is a placeholder row (id will be 0 or null)
+                var idValue = dgvRegistrations.Rows[e.RowIndex].Cells["id"].Value;
+                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                {
+                    // This is the placeholder row, don't draw the action button
+                    e.Handled = true;
+                    return;
+                }
+
                 Rectangle cellBounds = e.CellBounds;
 
                 int buttonWidth = 70;
@@ -240,28 +249,51 @@ namespace BarangayCogonEventManagementSystem
                                  FROM registrations r
                                  INNER JOIN events e ON r.event_id = e.id
                                  INNER JOIN users u ON r.user_id = u.id
-                                 ORDER BY r.status DESC, e.date DESC";
+                                 ORDER BY r.status DESC, e.start_datetime DESC";
                 DataTable dt = DatabaseHelper.ExecuteQuery(query);
 
                 // Clear existing rows
                 dgvRegistrations.Rows.Clear();
 
-                // Populate rows manually to maintain custom styling
-                foreach (DataRow dr in dt.Rows)
+                // Check if there's data
+                if (dt.Rows.Count == 0)
                 {
-                    // Capitalize the first letter of the role
-                    string role = dr["role"].ToString();
-                    string capitalizedRole = string.IsNullOrEmpty(role) ? role : char.ToUpper(role[0]) + role.Substring(1).ToLower();
-
-                    int rowIndex = dgvRegistrations.Rows.Add(
-                        dr["id"],
-                        dr["event_name"],
-                        dr["user_name"],
-                        capitalizedRole,
-                        dr["status"],
-                        dr["qr_code"],
-                        "" // ActionColumn (will be custom painted)
+                    // Add placeholder row when no data
+                    int placeholderIndex = dgvRegistrations.Rows.Add(
+                        0, // id
+                        "", // event_name
+                        "No registrations available yet", // user_name (placeholder message)
+                        "", // role
+                        "", // status
+                        "", // qr_code
+                        ""  // ActionColumn
                     );
+
+                    // Style the placeholder row
+                    DataGridViewRow placeholderRow = dgvRegistrations.Rows[placeholderIndex];
+                    placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
+                    placeholderRow.DefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                    placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                }
+                else
+                {
+                    // Populate rows manually to maintain custom styling
+                    foreach (DataRow dr in dt.Rows)
+                    {
+                        // Capitalize the first letter of the role
+                        string role = dr["role"].ToString();
+                        string capitalizedRole = string.IsNullOrEmpty(role) ? role : char.ToUpper(role[0]) + role.Substring(1).ToLower();
+
+                        int rowIndex = dgvRegistrations.Rows.Add(
+                            dr["id"],
+                            dr["event_name"],
+                            dr["user_name"],
+                            capitalizedRole,
+                            dr["status"],
+                            dr["qr_code"],
+                            "" // ActionColumn (will be custom painted)
+                        );
+                    }
                 }
 
                 // Clear selection to show the proper background color
@@ -282,6 +314,15 @@ namespace BarangayCogonEventManagementSystem
             {
                 // Get the current row data
                 DataGridViewRow row = dgvRegistrations.Rows[e.RowIndex];
+                
+                // Check if this is a placeholder row (id will be 0 or null)
+                var idValue = row.Cells["id"].Value;
+                if (idValue == null || Convert.ToInt32(idValue) == 0)
+                {
+                    // This is the placeholder row, do nothing
+                    return;
+                }
+                
                 string status = row.Cells["status"].Value?.ToString();
                 int registrationId = Convert.ToInt32(row.Cells["id"].Value);
                 string eventName = row.Cells["event_name"].Value?.ToString();
