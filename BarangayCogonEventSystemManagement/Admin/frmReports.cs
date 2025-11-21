@@ -328,10 +328,10 @@ namespace BarangayCogonEventManagementSystem
                 string query = @"
                 SELECT 
                     e.id, e.name AS 'Event Name', e.start_datetime AS 'Start DateTime', e.type AS 'Type',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'attendee' AND r.status = 'Approved') AS 'Attendees',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'volunteer' AND r.status = 'Approved') AS 'Volunteers',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Approved') AS 'Registered',
-                    (SELECT COUNT(*) FROM attendance a INNER JOIN registrations r ON a.registration_id = r.id WHERE r.event_id = e.id) AS 'Present',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'attendee' AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Attendees',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'volunteer' AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Volunteers',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Registered',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Present',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Pending') AS 'Pending'
                 FROM events e ORDER BY e.start_datetime DESC;";
 
@@ -342,12 +342,12 @@ namespace BarangayCogonEventManagementSystem
                 if (dgvReports.Columns.Count == 0)
                 {
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "id", Visible = false });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "event_name", HeaderText = "Event Name", FillWeight = 30 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "event_name", HeaderText = "Event Name", FillWeight = 26 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "date", HeaderText = "Event Date", FillWeight = 15 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", HeaderText = "Type", FillWeight = 18 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "registered", HeaderText = "Registered", FillWeight = 12 });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "present", HeaderText = "Present", FillWeight = 12 });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Attendance %", FillWeight = 13 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "present", HeaderText = "Attended", FillWeight = 12 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Attendance %", FillWeight = 17 });
                 }
 
                 int totalEvents = dt.Rows.Count;
@@ -387,7 +387,8 @@ namespace BarangayCogonEventManagementSystem
                         $"  • Volunteers: 0\n" +
                         $"  • Total Registered: 0\n\n" +
                         $"✓ ATTENDANCE\n" +
-                        $"  • Total Present: 0\n" +
+                        $"  • Fully Attended: 0\n" +
+                        $"  • Checked-in: 0\n" +
                         $"  • Overall Rate: 0.0%\n\n" +
                         $"⏳ PENDING\n" +
                         $"  • Awaiting Approval: 0\n\n" +
@@ -397,6 +398,15 @@ namespace BarangayCogonEventManagementSystem
                 }
                 else
                 {
+                    // Count total checked-in and attended across all events
+                    string statusCountQuery = @"
+                        SELECT 
+                            (SELECT COUNT(*) FROM registrations WHERE status = 'Attended') AS total_attended,
+                            (SELECT COUNT(*) FROM registrations WHERE status = 'Checked-in') AS total_checked_in";
+                    DataTable dtStatusCounts = DatabaseHelper.ExecuteQuery(statusCountQuery);
+                    int totalAttended = dtStatusCounts.Rows.Count > 0 ? Convert.ToInt32(dtStatusCounts.Rows[0]["total_attended"]) : 0;
+                    int totalCheckedIn = dtStatusCounts.Rows.Count > 0 ? Convert.ToInt32(dtStatusCounts.Rows[0]["total_checked_in"]) : 0;
+
                     foreach (DataRow dr in dt.Rows)
                     {
                         int attendees = Convert.ToInt32(dr["Attendees"]);
@@ -436,7 +446,7 @@ namespace BarangayCogonEventManagementSystem
                     double overallRate = totalRegistered > 0 ? ((double)totalPresent / totalRegistered) * 100 : 0;
                     UpdateStatCards(totalEvents, totalRegistered, overallRate, totalPending);
 
-                    // Beautiful formatted summary with icons
+                    // Beautiful formatted summary with icons - UPDATED
                     lblSummaryData.Text = 
                         $"📅 EVENTS\n" +
                         $"  • Total: {totalEvents}\n" +
@@ -447,7 +457,8 @@ namespace BarangayCogonEventManagementSystem
                         $"  • Volunteers: {totalVolunteers}\n" +
                         $"  • Total Registered: {totalRegistered}\n\n" +
                         $"✓ ATTENDANCE\n" +
-                        $"  • Total Present: {totalPresent}\n" +
+                        $"  • Fully Attended: {totalPresent}\n" +
+                        $"  • Checked-in: {totalCheckedIn}\n" +
                         $"  • Overall Rate: {overallRate:F1}%\n\n" +
                         $"⏳ PENDING\n" +
                         $"  • Awaiting Approval: {totalPending}\n\n" +
@@ -609,7 +620,7 @@ namespace BarangayCogonEventManagementSystem
             // Extract statistics from summary text
             int totalEvents = 0, completed = 0, upcoming = 0;
             int totalAttendees = 0, totalVolunteers = 0, totalRegistered = 0;
-            int totalPresent = 0;
+            int totalPresent = 0, totalCheckedIn = 0;
             double overallRate = 0;
             int totalPending = 0;
             double avgAttendeesPerEvent = 0, avgVolunteersPerEvent = 0;
@@ -618,13 +629,14 @@ namespace BarangayCogonEventManagementSystem
             string[] lines = summaryText.Split('\n');
             foreach (string line in lines)
             {
-                if (line.Contains("Total:")) totalEvents = ExtractNumber(line);
+                if (line.Contains("Total:") && line.Contains("•")) totalEvents = ExtractNumber(line);
                 else if (line.Contains("Completed:")) completed = ExtractNumber(line);
                 else if (line.Contains("Upcoming:")) upcoming = ExtractNumber(line);
-                else if (line.Contains("Attendees:")) totalAttendees = ExtractNumber(line);
-                else if (line.Contains("Volunteers:")) totalVolunteers = ExtractNumber(line);
+                else if (line.Contains("Attendees:") && !line.Contains("/")) totalAttendees = ExtractNumber(line);
+                else if (line.Contains("Volunteers:") && !line.Contains("/")) totalVolunteers = ExtractNumber(line);
                 else if (line.Contains("Total Registered:")) totalRegistered = ExtractNumber(line);
-                else if (line.Contains("Total Present:")) totalPresent = ExtractNumber(line);
+                else if (line.Contains("Fully Attended:")) totalPresent = ExtractNumber(line);
+                else if (line.Contains("Checked-in:")) totalCheckedIn = ExtractNumber(line);
                 else if (line.Contains("Overall Rate:")) overallRate = ExtractDouble(line);
                 else if (line.Contains("Awaiting Approval:")) totalPending = ExtractNumber(line);
                 else if (line.Contains("Attendees/Event:")) avgAttendeesPerEvent = ExtractDouble(line);
@@ -670,7 +682,7 @@ namespace BarangayCogonEventManagementSystem
             participantsCell.AddElement(new Paragraph($"  • Total Registered: {totalRegistered}", summaryFont));
             summaryGrid.AddCell(participantsCell);
 
-            // Cell 3: ATTENDANCE
+            // Cell 3: ATTENDANCE - UPDATED
             PdfPCell attendanceCell = new PdfPCell();
             attendanceCell.Border = iTextSharp.text.Rectangle.BOX;
             attendanceCell.Padding = 10;
@@ -680,9 +692,9 @@ namespace BarangayCogonEventManagementSystem
             Paragraph attendanceHeading = new Paragraph("ATTENDANCE", summaryHeadingFont);
             attendanceHeading.SpacingAfter = 8;
             attendanceCell.AddElement(attendanceHeading);
-            attendanceCell.AddElement(new Paragraph($"  • Total Present: {totalPresent}", summaryFont));
+            attendanceCell.AddElement(new Paragraph($"  • Fully Attended: {totalPresent}", summaryFont));
+            attendanceCell.AddElement(new Paragraph($"  • Checked-in: {totalCheckedIn}", summaryFont));
             attendanceCell.AddElement(new Paragraph($"  • Overall Rate: {overallRate:F1}%", summaryFont));
-            attendanceCell.AddElement(new Paragraph(" ", summaryFont)); // Empty line for spacing
             summaryGrid.AddCell(attendanceCell);
 
             // Cell 4: PENDING (without AVERAGES)

@@ -332,23 +332,37 @@ namespace BarangayCogonEventManagementSystem
                     rejectItem.Click += (s, ev) => QuickRejectRegistration(registrationId);
                     contextMenuQuickActions.Items.Add(rejectItem);
                 }
-                else if (status == "Approved")
+                else if (status == "Approved" || status == "Checked-in")
                 {
-                    // Show View QR for approved registrations
+                    // Show View QR for approved/checked-in registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
                     viewQRItem.Font = new Font("Segoe UI", 10F);
                     viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
                     contextMenuQuickActions.Items.Add(viewQRItem);
 
-                    // Option to reject approved registration
+                    // Option to reject approved/checked-in registration
                     ToolStripMenuItem rejectItem = new ToolStripMenuItem("✗ Reject");
                     rejectItem.Font = new Font("Segoe UI", 10F);
                     rejectItem.Click += (s, ev) => QuickRejectRegistration(registrationId);
                     contextMenuQuickActions.Items.Add(rejectItem);
                 }
-                else if (status == "Rejected")
+                else if (status == "Attended")
                 {
-                    // Show Approve for rejected registrations
+                    // Show View QR for attended registrations (completed)
+                    ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                    viewQRItem.Font = new Font("Segoe UI", 10F);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
+                    contextMenuQuickActions.Items.Add(viewQRItem);
+
+                    // Show info for attended status
+                    ToolStripMenuItem infoItem = new ToolStripMenuItem("ℹ️ Fully Attended");
+                    infoItem.Font = new Font("Segoe UI", 10F);
+                    infoItem.Enabled = false; // Just informational
+                    contextMenuQuickActions.Items.Add(infoItem);
+                }
+                else if (status == "Rejected" || status == "Didn't Attend")
+                {
+                    // Show Approve for rejected/didn't attend registrations
                     ToolStripMenuItem approveItem = new ToolStripMenuItem("✓ Approve");
                     approveItem.Font = new Font("Segoe UI", 10F);
                     approveItem.Click += (s, ev) => QuickApproveRegistration(registrationId, eventName, userName);
@@ -612,12 +626,12 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                // Load statistics
+                // Load statistics - Updated to count new statuses
                 string statsQuery = @"SELECT 
                                     (SELECT COUNT(*) FROM events) AS total_events,
-                                    (SELECT COUNT(*) FROM registrations WHERE role='attendee') AS total_attendees,
-                                    (SELECT COUNT(*) FROM registrations WHERE role='volunteer') AS total_volunteers,
-                                    (SELECT COUNT(*) FROM attendance) AS total_present";
+                                    (SELECT COUNT(*) FROM registrations WHERE role='attendee' AND status IN ('Approved', 'Checked-in', 'Attended')) AS total_attendees,
+                                    (SELECT COUNT(*) FROM registrations WHERE role='volunteer' AND status IN ('Approved', 'Checked-in', 'Attended')) AS total_volunteers,
+                                    (SELECT COUNT(*) FROM registrations WHERE status IN ('Attended', 'Checked-in')) AS total_present";
 
                 DataTable dtStats = DatabaseHelper.ExecuteQuery(statsQuery);
 

@@ -203,6 +203,12 @@
     <Compile Include="User\frmMyEvents.Designer.cs">
       <DependentUpon>frmMyEvents.cs</DependentUpon>
     </Compile>
+    <Compile Include="User\frmQRCodeViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="User\frmQRCodeViewer.Designer.cs">
+      <DependentUpon>frmQRCodeViewer.cs</DependentUpon>
+    </Compile>
     <Compile Include="User\frmRegister.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -254,6 +260,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="User\frmMyEvents.resx">
       <DependentUpon>frmMyEvents.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="User\frmQRCodeViewer.resx">
+      <DependentUpon>frmQRCodeViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="User\frmRegister.resx">
       <DependentUpon>frmRegister.cs</DependentUpon>

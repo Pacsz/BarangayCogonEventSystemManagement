@@ -202,7 +202,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "full_name",
                 HeaderText = "Full Name",
                 ReadOnly = true,
-                FillWeight = 25
+                FillWeight = 30
             });
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
@@ -210,7 +210,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "email",
                 HeaderText = "Email",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 25
             });
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
@@ -218,7 +218,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "contact",
                 HeaderText = "Contact",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 18
             });
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
@@ -226,7 +226,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "role",
                 HeaderText = "Role",
                 ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 15
             });
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
@@ -234,15 +234,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "status",
                 HeaderText = "Status",
                 ReadOnly = true,
-                FillWeight = 12
-            });
-
-            dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "attendance_status",
-                HeaderText = "Attendance",
-                ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 15
             });
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
@@ -255,10 +247,18 @@ namespace BarangayCogonEventManagementSystem
 
             dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_end_datetime",
+                HeaderText = "Event End",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 15
             });
 
             // Wire up event handlers
@@ -299,23 +299,43 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                Rectangle cellBounds = e.CellBounds;
-                int buttonWidth = 70;
-                int buttonHeight = 30;
-                int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
-                int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
-                Rectangle buttonRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
-                int radius = 10;
+                // Check if event has ended - get from hidden column
+                DataGridViewRow row = dgvAttendees.Rows[e.RowIndex];
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
 
-                using (GraphicsPath path = GetRoundPath(buttonRect, radius))
-                using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
-                using (SolidBrush textBrush = new SolidBrush(Color.White))
-                using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
-                using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                Rectangle cellBounds = e.CellBounds;
+
+                if (eventHasEnded)
                 {
-                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    e.Graphics.FillPath(buttonBrush, path);
-                    e.Graphics.DrawString("...", btnFont, textBrush, buttonRect, sf);
+                    // Draw "N/A" text for ended events
+                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
+                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
+                    }
+                }
+                else
+                {
+                    // Draw action button for ongoing/upcoming events
+                    int buttonWidth = 70;
+                    int buttonHeight = 30;
+                    int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                    int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+                    Rectangle buttonRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                    int radius = 10;
+
+                    using (GraphicsPath path = GetRoundPath(buttonRect, radius))
+                    using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
+                    using (SolidBrush textBrush = new SolidBrush(Color.White))
+                    using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        e.Graphics.FillPath(buttonBrush, path);
+                        e.Graphics.DrawString("...", btnFont, textBrush, buttonRect, sf);
+                    }
                 }
 
                 e.Handled = true;
@@ -332,6 +352,16 @@ namespace BarangayCogonEventManagementSystem
                 var regIdValue = row.Cells["registration_id"].Value;
                 if (regIdValue == null || Convert.ToInt32(regIdValue) == 0)
                 {
+                    return;
+                }
+
+                // Check if event has ended
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+
+                if (eventHasEnded)
+                {
+                    // Don't show menu for ended events
                     return;
                 }
 
@@ -568,7 +598,7 @@ namespace BarangayCogonEventManagementSystem
                 if (dt.Rows.Count == 0)
                 {
                     int placeholderIndex = dgvAttendees.Rows.Add(
-                        0, "No registrations for this event yet", "", "", "", "", "", "", ""
+                        0, "No registrations for this event yet", "", "", "", "", "", ""
                     );
 
                     DataGridViewRow placeholderRow = dgvAttendees.Rows[placeholderIndex];
@@ -580,14 +610,15 @@ namespace BarangayCogonEventManagementSystem
                 {
                     foreach (DataRow dr in dt.Rows)
                     {
+                        int registrationId = Convert.ToInt32(dr["registration_id"]);
                         string role = dr["role"].ToString();
                         string capitalizedRole = string.IsNullOrEmpty(role) ? role :
                             char.ToUpper(role[0]) + role.Substring(1).ToLower();
 
-                        string statusDisplay = dr["status"].ToString();
+                        string currentStatus = dr["status"].ToString();
                         
-                        // Determine attendance status based on check_in_time and check_out_time
-                        string attendanceStatus;
+                        // Determine the new status based on check_in_time and check_out_time
+                        string newStatus;
                         bool hasCheckIn = dr["check_in_time"] != DBNull.Value;
                         bool hasCheckOut = dr["check_out_time"] != DBNull.Value;
                         DateTime eventEndDateTime = Convert.ToDateTime(dr["end_datetime"]);
@@ -596,31 +627,37 @@ namespace BarangayCogonEventManagementSystem
                         if (hasCheckIn && hasCheckOut)
                         {
                             // Both check-in and check-out recorded
-                            attendanceStatus = "Attended";
+                            newStatus = "Attended";
                         }
                         else if (hasCheckIn && !hasCheckOut)
                         {
                             // Only check-in recorded
-                            attendanceStatus = "Checked-in";
+                            newStatus = "Checked-in";
                         }
                         else if (!hasCheckIn && !hasCheckOut)
                         {
                             // No attendance record
-                            if (eventHasEnded)
+                            if (eventHasEnded && currentStatus == "Approved")
                             {
                                 // Event has ended and no attendance
-                                attendanceStatus = "Didn't Attend";
+                                newStatus = "Didn't Attend";
                             }
                             else
                             {
-                                // Event is ongoing or upcoming
-                                attendanceStatus = "N/A";
+                                // Keep current status (Pending, Approved, Rejected)
+                                newStatus = currentStatus;
                             }
                         }
                         else
                         {
-                            // This shouldn't happen (check-out without check-in), but handle it
-                            attendanceStatus = "N/A";
+                            // This shouldn't happen (check-out without check-in), but keep current status
+                            newStatus = currentStatus;
+                        }
+
+                        // Update the status in the database if it has changed
+                        if (newStatus != currentStatus)
+                        {
+                            UpdateRegistrationStatus(registrationId, newStatus);
                         }
 
                         dgvAttendees.Rows.Add(
@@ -629,9 +666,9 @@ namespace BarangayCogonEventManagementSystem
                             dr["email"],
                             dr["contact"],
                             capitalizedRole,
-                            statusDisplay,
-                            attendanceStatus,
+                            newStatus,
                             dr["qr_code"],
+                            dr["end_datetime"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }
@@ -643,6 +680,24 @@ namespace BarangayCogonEventManagementSystem
             {
                 MessageBox.Show("Error loading attendees: " + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateRegistrationStatus(int registrationId, string newStatus)
+        {
+            try
+            {
+                string updateQuery = "UPDATE registrations SET status = @status WHERE id = @id";
+                MySqlParameter[] parameters = {
+                    new MySqlParameter("@status", newStatus),
+                    new MySqlParameter("@id", registrationId)
+                };
+                DatabaseHelper.ExecuteNonQuery(updateQuery, parameters);
+            }
+            catch (Exception ex)
+            {
+                // Log error silently, don't interrupt the UI
+                System.Diagnostics.Debug.WriteLine($"Error updating status for registration {registrationId}: {ex.Message}");
             }
         }
     }

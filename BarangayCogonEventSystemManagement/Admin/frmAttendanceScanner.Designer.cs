@@ -35,7 +35,7 @@ namespace BarangayCogonEventManagementSystem
             this.picCamera.BackColor = System.Drawing.Color.Black;
             this.picCamera.Location = new System.Drawing.Point(30, 80);
             this.picCamera.Name = "picCamera";
-            this.picCamera.Size = new System.Drawing.Size(888, 450);
+            this.picCamera.Size = new System.Drawing.Size(888, 434);
             this.picCamera.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.picCamera.TabIndex = 0;
             this.picCamera.TabStop = false;
@@ -69,11 +69,11 @@ namespace BarangayCogonEventManagementSystem
             // lblStatus
             // 
             this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 14F);
+            this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 13.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStatus.ForeColor = System.Drawing.Color.White;
-            this.lblStatus.Location = new System.Drawing.Point(25, 550);
+            this.lblStatus.Location = new System.Drawing.Point(28, 530);
             this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(600, 44);
+            this.lblStatus.Size = new System.Drawing.Size(890, 60);
             this.lblStatus.TabIndex = 5;
             this.lblStatus.Text = "Status: Waiting to start...";
             // 
@@ -82,7 +82,7 @@ namespace BarangayCogonEventManagementSystem
             this.cboCameras.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboCameras.Location = new System.Drawing.Point(150, 27);
             this.cboCameras.Name = "cboCameras";
-            this.cboCameras.Size = new System.Drawing.Size(267, 28);
+            this.cboCameras.Size = new System.Drawing.Size(267, 24);
             this.cboCameras.TabIndex = 4;
             // 
             // lblCamera

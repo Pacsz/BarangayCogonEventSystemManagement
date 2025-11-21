@@ -192,6 +192,14 @@ namespace BarangayCogonEventManagementSystem
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_end_datetime",
+                HeaderText = "Event End",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
@@ -237,23 +245,45 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                Rectangle cellBounds = e.CellBounds;
-                int buttonWidth = 70;
-                int buttonHeight = 30;
-                int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
-                int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
-                Rectangle buttonRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
-                int radius = 10;
+                // Check if event has ended or status is rejected
+                DataGridViewRow row = dgvMyEvents.Rows[e.RowIndex];
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+                string status = row.Cells["status"].Value?.ToString();
+                bool isRejected = status == "Rejected" || status == "Didn't Attend";
 
-                using (GraphicsPath path = GetRoundPath(buttonRect, radius))
-                using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
-                using (SolidBrush textBrush = new SolidBrush(Color.White))
-                using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
-                using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                Rectangle cellBounds = e.CellBounds;
+
+                if (eventHasEnded || isRejected)
                 {
-                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    e.Graphics.FillPath(buttonBrush, path);
-                    e.Graphics.DrawString("...", btnFont, textBrush, buttonRect, sf);
+                    // Draw "N/A" text for ended events or rejected registrations
+                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
+                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
+                    }
+                }
+                else
+                {
+                    // Draw action button for active registrations
+                    int buttonWidth = 70;
+                    int buttonHeight = 30;
+                    int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                    int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+                    Rectangle buttonRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                    int radius = 10;
+
+                    using (GraphicsPath path = GetRoundPath(buttonRect, radius))
+                    using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
+                    using (SolidBrush textBrush = new SolidBrush(Color.White))
+                    using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        e.Graphics.FillPath(buttonBrush, path);
+                        e.Graphics.DrawString("...", btnFont, textBrush, buttonRect, sf);
+                    }
                 }
 
                 e.Handled = true;
@@ -273,7 +303,18 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                // Check if event has ended or status is rejected
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
                 string status = row.Cells["status"].Value?.ToString();
+                bool isRejected = status == "Rejected" || status == "Didn't Attend";
+
+                if (eventHasEnded || isRejected)
+                {
+                    // Don't show menu for ended events or rejected registrations
+                    return;
+                }
+
                 int registrationId = Convert.ToInt32(row.Cells["registration_id"].Value);
                 int eventId = Convert.ToInt32(row.Cells["event_id"].Value);
                 string eventName = row.Cells["event_name"].Value?.ToString();
@@ -290,27 +331,15 @@ namespace BarangayCogonEventManagementSystem
                     unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName);
                     contextMenuActions.Items.Add(unregisterItem);
                 }
-                else if (status == "Approved" || status == "Attended")
+                else if (status == "Approved" || status == "Attended" || status == "Checked-in")
                 {
-                    // Show View QR for approved/attended registrations
+                    // Show View QR for approved/checked-in/attended registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
                     viewQRItem.Font = new Font("Segoe UI", 10F);
                     viewQRItem.Click += (s, ev) => ViewQRCode(eventName, registrationId);
                     contextMenuActions.Items.Add(viewQRItem);
-
-                    // Add N/A option (disabled)
-                    ToolStripMenuItem naItem = new ToolStripMenuItem("N/A");
-                    naItem.Font = new Font("Segoe UI", 10F);
-                    naItem.Enabled = false;
-                    naItem.ForeColor = Color.Gray;
-                    contextMenuActions.Items.Add(naItem);
-                } else {
-                    ToolStripMenuItem naItem = new ToolStripMenuItem("N/A");
-                    naItem.Font = new Font("Segoe UI", 10F);
-                    naItem.Enabled = false;
-                    naItem.ForeColor = Color.Gray;
-                    contextMenuActions.Items.Add(naItem);
                 }
+
                  // Get cell rectangle
                  Rectangle rect = dgvMyEvents.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
 
@@ -604,6 +633,7 @@ namespace BarangayCogonEventManagementSystem
                                     END AS event_date,
                                     CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
+                                    e.end_datetime,
                                     r.role,
                                     r.status
                                 FROM registrations r
@@ -621,7 +651,7 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Add placeholder row
                     int placeholderIndex = dgvMyEvents.Rows.Add(
-                        0, 0, "You haven't registered for any events yet", "", "", "", "", "", ""
+                        0, 0, "You haven't registered for any events yet", "", "", "", "", "", DBNull.Value, ""
                     );
 
                     DataGridViewRow placeholderRow = dgvMyEvents.Rows[placeholderIndex];
@@ -646,6 +676,7 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_venue"],
                             capitalizedRole,
                             dr["status"],
+                            dr["end_datetime"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }

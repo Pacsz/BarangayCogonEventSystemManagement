@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -15,6 +15,8 @@ namespace BarangayCogonEventManagementSystem
         private FilterInfoCollection videoDevices;
         private VideoCaptureDevice videoSource;
         private Timer scanTimer;
+        private string lastScannedQR = string.Empty;
+        private DateTime lastScanTime = DateTime.MinValue;
 
         public frmAttendanceScanner()
         {
@@ -78,6 +80,13 @@ namespace BarangayCogonEventManagementSystem
                         btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
                 }
             };
+
+            // Style Status Label with background container
+            lblStatus.BackColor = Color.FromArgb(37, 42, 64); // Dark blue background
+            lblStatus.AutoSize = false;
+            lblStatus.TextAlign = ContentAlignment.MiddleLeft;
+            lblStatus.Padding = new Padding(15, 10, 15, 10);
+            lblStatus.BorderStyle = BorderStyle.FixedSingle;
         }
 
         private GraphicsPath GetRoundPath(Rectangle rect, int radius)
@@ -169,14 +178,20 @@ namespace BarangayCogonEventManagementSystem
                 if (result != null)
                 {
                     string qrText = result.Text;
-                    lblStatus.Text = "QR Scanned: " + qrText;
+                    
+                    // Prevent scanning the same QR code repeatedly within 3 seconds
+                    if (qrText == lastScannedQR && (DateTime.Now - lastScanTime).TotalSeconds < 3)
+                    {
+                        return;
+                    }
+
+                    lastScannedQR = qrText;
+                    lastScanTime = DateTime.Now;
+
+                    lblStatus.Text = "QR Scanned: Processing...";
                     lblStatus.ForeColor = Color.FromArgb(255, 193, 7); // Yellow color
 
                     RecordAttendance(qrText);
-
-                    scanTimer.Stop();
-                    System.Threading.Thread.Sleep(1000);
-                    scanTimer.Start();
                 }
             }
             catch (Exception ex)
@@ -190,41 +205,275 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                string query = "SELECT id FROM registrations WHERE qr_code=@qr";
+                // Query to get registration details with user and event information
+                string query = @"
+                    SELECT 
+                        r.id AS registration_id,
+                        r.status,
+                        r.event_id,
+                        u.name AS user_name,
+                        u.email,
+                        e.name AS event_name,
+                        e.start_datetime,
+                        e.end_datetime
+                    FROM registrations r
+                    INNER JOIN users u ON r.user_id = u.id
+                    INNER JOIN events e ON r.event_id = e.id
+                    WHERE r.qr_code = @qr";
+                
                 MySqlParameter[] param = { new MySqlParameter("@qr", qrText) };
                 DataTable dt = DatabaseHelper.ExecuteQuery(query, param);
 
+                // Validation 1: Check if QR code exists in database
                 if (dt.Rows.Count == 0)
                 {
-                    lblStatus.Text = "Status: QR not recognized.";
+                    lblStatus.Text = "❌ Status: QR code not recognized. Invalid QR code.";
                     lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                    MessageBox.Show("This QR code is not registered in the system.", 
+                        "Invalid QR Code", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                int regId = Convert.ToInt32(dt.Rows[0]["id"]);
+                DataRow row = dt.Rows[0];
+                int regId = Convert.ToInt32(row["registration_id"]);
+                string status = row["status"].ToString();
+                string userName = row["user_name"].ToString();
+                string userEmail = row["email"].ToString();
+                string eventName = row["event_name"].ToString();
+                DateTime eventStartDateTime = Convert.ToDateTime(row["start_datetime"]);
+                DateTime eventEndDateTime = Convert.ToDateTime(row["end_datetime"]);
+                DateTime currentTime = DateTime.Now;
 
-                string checkQuery = "SELECT * FROM attendance WHERE registration_id=@id";
+                // Validation 2: Check if registration is approved
+                if (status != "Approved" && status != "Checked-in")
+                {
+                    lblStatus.Text = $"❌ Status: Registration not approved. Status: {status}";
+                    lblStatus.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
+                    MessageBox.Show($"This registration is not approved.\n\n" +
+                        $"Name: {userName}\n" +
+                        $"Email: {userEmail}\n" +
+                        $"Event: {eventName}\n" +
+                        $"Status: {status}\n\n" +
+                        $"Please approve the registration first.",
+                        "Registration Not Approved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Validation 3: Check if event has ended
+                if (currentTime > eventEndDateTime)
+                {
+                    lblStatus.Text = "❌ Status: Event has already ended.";
+                    lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                    MessageBox.Show($"This event has already ended.\n\n" +
+                        $"Event: {eventName}\n" +
+                        $"End Date: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                        $"Cannot record attendance for past events.",
+                        "Event Ended", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Validation 4: Check if event has started (for check-in)
+                if (currentTime < eventStartDateTime)
+                {
+                    lblStatus.Text = "⏰ Status: Event hasn't started yet.";
+                    lblStatus.ForeColor = Color.FromArgb(255, 193, 7); // Yellow color
+                    
+                    TimeSpan timeUntilStart = eventStartDateTime - currentTime;
+                    string timeMessage = "";
+                    
+                    if (timeUntilStart.TotalDays >= 1)
+                    {
+                        int days = (int)timeUntilStart.TotalDays;
+                        timeMessage = $"{days} day{(days > 1 ? "s" : "")}";
+                    }
+                    else if (timeUntilStart.TotalHours >= 1)
+                    {
+                        int hours = (int)timeUntilStart.TotalHours;
+                        timeMessage = $"{hours} hour{(hours > 1 ? "s" : "")}";
+                    }
+                    else
+                    {
+                        int minutes = (int)timeUntilStart.TotalMinutes;
+                        timeMessage = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                    }
+                    
+                    MessageBox.Show($"This event hasn't started yet.\n\n" +
+                        $"Event: {eventName}\n" +
+                        $"Start Date: {eventStartDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                        $"Current Time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                        $"Event starts in approximately {timeMessage}.\n" +
+                        $"Please wait until the event begins to check in.",
+                        "Event Not Started", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Check if attendance already recorded (check-in exists)
+                string checkQuery = @"
+                    SELECT 
+                        a.id,
+                        a.check_in_time,
+                        a.check_out_time
+                    FROM attendance a 
+                    WHERE a.registration_id = @id";
+                
                 MySqlParameter[] checkParam = { new MySqlParameter("@id", regId) };
                 DataTable checkDt = DatabaseHelper.ExecuteQuery(checkQuery, checkParam);
 
                 if (checkDt.Rows.Count > 0)
                 {
-                    lblStatus.Text = "Status: Attendance already recorded.";
-                    lblStatus.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
-                    return;
+                    // Attendance record exists
+                    DataRow attendanceRow = checkDt.Rows[0];
+                    DateTime checkInTime = Convert.ToDateTime(attendanceRow["check_in_time"]);
+                    object checkOutValue = attendanceRow["check_out_time"];
+                    
+                    if (checkOutValue != DBNull.Value)
+                    {
+                        // Both check-in and check-out recorded
+                        DateTime checkOutTime = Convert.ToDateTime(checkOutValue);
+                        lblStatus.Text = "ℹ️ Status: Attendance already completed (checked in & out).";
+                        lblStatus.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
+                        MessageBox.Show($"Attendance already completed for this registration.\n\n" +
+                            $"Name: {userName}\n" +
+                            $"Event: {eventName}\n" +
+                            $"Check-in: {checkInTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                            $"Check-out: {checkOutTime.ToString("MMM dd, yyyy hh:mm tt")}",
+                            "Already Recorded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
+                    }
+                    else
+                    {
+                        // Only check-in recorded, offer check-out
+                        // Validation 5: Check if event is still ongoing (before allowing check-out)
+                        if (currentTime < eventEndDateTime)
+                        {
+                            lblStatus.Text = "⏰ Status: Event is still ongoing.";
+                            lblStatus.ForeColor = Color.FromArgb(255, 193, 7); // Yellow color
+                            
+                            TimeSpan timeUntilEnd = eventEndDateTime - currentTime;
+                            string timeMessage = "";
+                            
+                            if (timeUntilEnd.TotalHours >= 1)
+                            {
+                                int hours = (int)timeUntilEnd.TotalHours;
+                                timeMessage = $"{hours} hour{(hours > 1 ? "s" : "")}";
+                            }
+                            else
+                            {
+                                int minutes = (int)timeUntilEnd.TotalMinutes;
+                                timeMessage = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                            }
+                            
+                            MessageBox.Show($"The event is still ongoing.\n\n" +
+                                $"Event: {eventName}\n" +
+                                $"End Date: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                                $"Current Time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                                $"Event ends in approximately {timeMessage}.\n" +
+                                $"Check-out will be available after the event ends.",
+                                "Event Still Ongoing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+                        
+                        // Event has ended, allow check-out
+                        DialogResult result = MessageBox.Show(
+                            $"User has already checked in.\n\n" +
+                            $"Name: {userName}\n" +
+                            $"Email: {userEmail}\n" +
+                            $"Event: {eventName}\n" +
+                            $"Check-in: {checkInTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                            $"Would you like to record CHECK-OUT now?",
+                            "Record Check-Out?", 
+                            MessageBoxButtons.YesNo, 
+                            MessageBoxIcon.Question);
+
+                        if (result == DialogResult.Yes)
+                        {
+                            RecordCheckOut(Convert.ToInt32(attendanceRow["id"]), regId, userName, eventName);
+                        }
+                        else
+                        {
+                            lblStatus.Text = "ℹ️ Status: Check-out cancelled.";
+                            lblStatus.ForeColor = Color.White;
+                        }
+                        return;
+                    }
                 }
 
-                string insert = "INSERT INTO attendance (registration_id, time_in) VALUES (@id, NOW())";
+                // No attendance record exists, record check-in
+                string insert = "INSERT INTO attendance (registration_id, check_in_time) VALUES (@id, NOW())";
                 MySqlParameter[] insertParam = { new MySqlParameter("@id", regId) };
-                DatabaseHelper.ExecuteNonQuery(insert, insertParam);
+                int rowsAffected = DatabaseHelper.ExecuteNonQuery(insert, insertParam);
 
-                lblStatus.Text = "Status: ? Attendance recorded successfully!";
-                lblStatus.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                if (rowsAffected > 0)
+                {
+                    // Update registration status to "Checked-in"
+                    UpdateRegistrationStatus(regId, "Checked-in");
+                    
+                    lblStatus.Text = "✅ Status: Check-in recorded successfully!";
+                    lblStatus.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                    
+                    MessageBox.Show($"✅ CHECK-IN SUCCESSFUL!\n\n" +
+                        $"Name: {userName}\n" +
+                        $"Email: {userEmail}\n" +
+                        $"Event: {eventName}\n" +
+                        $"Time: {DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")}",
+                        "Attendance Recorded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
             catch (Exception ex)
             {
-                lblStatus.Text = "Error saving attendance: " + ex.Message;
+                lblStatus.Text = "❌ Error: " + ex.Message;
                 lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                MessageBox.Show("Error recording attendance: " + ex.Message, 
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void RecordCheckOut(int attendanceId, int registrationId, string userName, string eventName)
+        {
+            try
+            {
+                string updateQuery = "UPDATE attendance SET check_out_time = NOW() WHERE id = @id";
+                MySqlParameter[] updateParam = { new MySqlParameter("@id", attendanceId) };
+                int rowsAffected = DatabaseHelper.ExecuteNonQuery(updateQuery, updateParam);
+
+                if (rowsAffected > 0)
+                {
+                    // Update registration status to "Attended"
+                    UpdateRegistrationStatus(registrationId, "Attended");
+                    
+                    lblStatus.Text = "✅ Status: Check-out recorded successfully!";
+                    lblStatus.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                    
+                    MessageBox.Show($"✅ CHECK-OUT SUCCESSFUL!\n\n" +
+                        $"Name: {userName}\n" +
+                        $"Event: {eventName}\n" +
+                        $"Time: {DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")}",
+                        "Check-out Recorded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = "❌ Error recording check-out: " + ex.Message;
+                lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                MessageBox.Show("Error recording check-out: " + ex.Message, 
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UpdateRegistrationStatus(int registrationId, string newStatus)
+        {
+            try
+            {
+                string updateQuery = "UPDATE registrations SET status = @status WHERE id = @id";
+                MySqlParameter[] parameters = {
+                    new MySqlParameter("@status", newStatus),
+                    new MySqlParameter("@id", registrationId)
+                };
+                DatabaseHelper.ExecuteNonQuery(updateQuery, parameters);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating registration status: {ex.Message}");
             }
         }
 

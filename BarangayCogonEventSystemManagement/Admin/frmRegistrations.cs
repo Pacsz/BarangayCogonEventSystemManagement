@@ -139,7 +139,23 @@ namespace BarangayCogonEventManagementSystem
                 Name = "user_name",
                 HeaderText = "User Name",
                 ReadOnly = true,
-                FillWeight = 25
+                FillWeight = 20
+            });
+
+            dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "email",
+                HeaderText = "Email",
+                ReadOnly = true,
+                FillWeight = 22
+            });
+
+            dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "event_date",
+                HeaderText = "Event Date",
+                ReadOnly = true,
+                FillWeight = 15
             });
 
             dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
@@ -147,7 +163,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "role",
                 HeaderText = "Role",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 12
             });
 
             dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
@@ -155,7 +171,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "status",
                 HeaderText = "Status",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 12
             });
 
             dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
@@ -168,10 +184,18 @@ namespace BarangayCogonEventManagementSystem
 
             dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_end_datetime",
+                HeaderText = "Event End",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvRegistrations.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 12
             });
 
             // Wire up event handlers
@@ -214,27 +238,46 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                // Check if event has ended
+                DataGridViewRow row = dgvRegistrations.Rows[e.RowIndex];
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+
                 Rectangle cellBounds = e.CellBounds;
 
-                int buttonWidth = 70;
-                int buttonHeight = 30;
-
-                // Center the button in the cell
-                int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
-                int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
-
-                Rectangle viewRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
-                int radius = 10;
-
-                using (GraphicsPath viewPath = GetRoundPath(viewRect, radius))
-                using (SolidBrush viewBrush = new SolidBrush(Color.FromArgb(0, 126, 249))) // Accent blue
-                using (SolidBrush textBrush = new SolidBrush(Color.White))
-                using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
-                using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                if (eventHasEnded)
                 {
-                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                    e.Graphics.FillPath(viewBrush, viewPath);
-                    e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
+                    // Draw "N/A" text for ended events
+                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
+                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
+                    }
+                }
+                else
+                {
+                    // Draw action button for ongoing/upcoming events
+                    int buttonWidth = 70;
+                    int buttonHeight = 30;
+
+                    // Center the button in the cell
+                    int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                    int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+
+                    Rectangle viewRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                    int radius = 10;
+
+                    using (GraphicsPath viewPath = GetRoundPath(viewRect, radius))
+                    using (SolidBrush viewBrush = new SolidBrush(Color.FromArgb(0, 126, 249))) // Accent blue
+                    using (SolidBrush textBrush = new SolidBrush(Color.White))
+                    using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        e.Graphics.FillPath(viewBrush, viewPath);
+                        e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
+                    }
                 }
 
                 e.Handled = true;
@@ -245,7 +288,16 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                string query = @"SELECT r.id, e.name AS event_name, u.name AS user_name, r.role, r.status, r.qr_code 
+                string query = @"SELECT 
+                                    r.id, 
+                                    e.name AS event_name, 
+                                    u.name AS user_name,
+                                    u.email,
+                                    DATE_FORMAT(e.start_datetime, '%b %d, %Y') AS event_date,
+                                    e.end_datetime,
+                                    r.role, 
+                                    r.status, 
+                                    r.qr_code 
                                  FROM registrations r
                                  INNER JOIN events e ON r.event_id = e.id
                                  INNER JOIN users u ON r.user_id = u.id
@@ -263,9 +315,12 @@ namespace BarangayCogonEventManagementSystem
                         0, // id
                         "", // event_name
                         "No registrations available yet", // user_name (placeholder message)
+                        "", // email
+                        "", // event_date
                         "", // role
                         "", // status
                         "", // qr_code
+                        DBNull.Value, // event_end_datetime
                         ""  // ActionColumn
                     );
 
@@ -288,9 +343,12 @@ namespace BarangayCogonEventManagementSystem
                             dr["id"],
                             dr["event_name"],
                             dr["user_name"],
+                            dr["email"],
+                            dr["event_date"],
                             capitalizedRole,
                             dr["status"],
                             dr["qr_code"],
+                            dr["end_datetime"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }
@@ -320,6 +378,16 @@ namespace BarangayCogonEventManagementSystem
                 if (idValue == null || Convert.ToInt32(idValue) == 0)
                 {
                     // This is the placeholder row, do nothing
+                    return;
+                }
+
+                // Check if event has ended
+                var eventEndValue = row.Cells["event_end_datetime"].Value;
+                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+
+                if (eventHasEnded)
+                {
+                    // Don't show menu for ended events
                     return;
                 }
                 
@@ -359,7 +427,7 @@ namespace BarangayCogonEventManagementSystem
                     rejectItem.Font = new Font("Segoe UI", 10F);
                     rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
                     contextMenuActions.Items.Add(rejectItem);
-                }
+                } 
                 else if (status == "Rejected")
                 {
                     // Show Approve for rejected registrations (allow re-approval)
@@ -367,10 +435,15 @@ namespace BarangayCogonEventManagementSystem
                     approveItem.Font = new Font("Segoe UI", 10F);
                     approveItem.Click += (s, ev) => ApproveRegistration(registrationId, eventName, userName);
                     contextMenuActions.Items.Add(approveItem);
+                } else {
+                    ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                    viewQRItem.Font = new Font("Segoe UI", 10F);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
+                    contextMenuActions.Items.Add(viewQRItem);
                 }
 
-                // Get cell rectangle
-                Rectangle rect = dgvRegistrations.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
+                    // Get cell rectangle
+                    Rectangle rect = dgvRegistrations.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
                 
                 // Calculate the button position (centered in cell, same as in CellPainting)
                 int buttonWidth = 70;
@@ -429,7 +502,7 @@ namespace BarangayCogonEventManagementSystem
                     int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
                     if (result > 0)
                     {
-                        MessageBox.Show($"Registration approved!\nQR code saved at:\n{fullPath}", 
+                        MessageBox.Show($"Registration approved!", 
                             "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadPendingRegistrations();
                     }
