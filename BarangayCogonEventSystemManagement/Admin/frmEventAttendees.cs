@@ -15,6 +15,9 @@ namespace BarangayCogonEventManagementSystem
         private string eventName;
         private DataGridView dgvAttendees;
         private ContextMenuStrip contextMenuActions;
+        private TextBox txtSearch;
+        private ComboBox cboStatusFilter;
+        private ComboBox cboRoleFilter;
 
         public frmEventAttendees(int eventId, string eventName)
         {
@@ -93,11 +96,94 @@ namespace BarangayCogonEventManagementSystem
             };
             this.Controls.Add(lblTitle);
 
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 65),
+                Size = new Size(280, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search attendees...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search attendees...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search attendees...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadAttendees();
+            this.Controls.Add(txtSearch);
+
+            // Status filter
+            Label lblStatus = new Label
+            {
+                Text = "Status:",
+                Location = new Point(320, 70),
+                Size = new Size(60, 20),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
+            };
+            this.Controls.Add(lblStatus);
+
+            cboStatusFilter = new ComboBox
+            {
+                Location = new Point(385, 65),
+                Size = new Size(150, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboStatusFilter.Items.AddRange(new object[] { "All Status", "Pending", "Approved", "Checked-in", "Attended", "Rejected", "Didn't Attend" });
+            cboStatusFilter.SelectedIndex = 0;
+            cboStatusFilter.SelectedIndexChanged += (s, ev) => LoadAttendees();
+            this.Controls.Add(cboStatusFilter);
+
+            // Role filter
+            Label lblRole = new Label
+            {
+                Text = "Role:",
+                Location = new Point(555, 70),
+                Size = new Size(50, 20),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
+            };
+            this.Controls.Add(lblRole);
+
+            cboRoleFilter = new ComboBox
+            {
+                Location = new Point(610, 65),
+                Size = new Size(150, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboRoleFilter.Items.AddRange(new object[] { "All Roles", "Attendee", "Volunteer", "Speaker" });
+            cboRoleFilter.SelectedIndex = 0;
+            cboRoleFilter.SelectedIndexChanged += (s, ev) => LoadAttendees();
+            this.Controls.Add(cboRoleFilter);
+
             // DataGridView for attendees
             dgvAttendees = new DataGridView
             {
-                Location = new Point(20, 70),
-                Size = new Size(950, 450),
+                Location = new Point(20, 110),
+                Size = new Size(950, 410),
                 BackgroundColor = Color.FromArgb(46, 51, 73),
                 BorderStyle = BorderStyle.None,
                 GridColor = Color.FromArgb(60, 65, 90),
@@ -587,18 +673,49 @@ namespace BarangayCogonEventManagementSystem
                                 INNER JOIN users u ON r.user_id = u.id
                                 INNER JOIN events e ON r.event_id = e.id
                                 LEFT JOIN attendance a ON a.registration_id = r.id
-                                WHERE r.event_id = @event_id
-                                ORDER BY r.status DESC, u.first_name ASC, u.last_name ASC";
+                                WHERE r.event_id = @event_id";
 
-                MySqlParameter[] parameters = { new MySqlParameter("@event_id", eventId) };
-                DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+                paramsList.Add(new MySqlParameter("@event_id", eventId));
+
+                // Add status filter
+                if (cboStatusFilter != null && cboStatusFilter.SelectedIndex > 0)
+                {
+                    query += " AND r.status = @status";
+                    paramsList.Add(new MySqlParameter("@status", cboStatusFilter.SelectedItem.ToString()));
+                }
+
+                // Add role filter
+                if (cboRoleFilter != null && cboRoleFilter.SelectedIndex > 0)
+                {
+                    query += " AND r.role = @role";
+                    paramsList.Add(new MySqlParameter("@role", cboRoleFilter.SelectedItem.ToString().ToLower()));
+                }
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search attendees...")
+                    {
+                        query += @" AND (u.first_name LIKE @search 
+                                    OR u.last_name LIKE @search 
+                                    OR u.email LIKE @search
+                                    OR u.contact_number LIKE @search)";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY r.status DESC, u.first_name ASC, u.last_name ASC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
 
                 dgvAttendees.Rows.Clear();
 
                 if (dt.Rows.Count == 0)
                 {
                     int placeholderIndex = dgvAttendees.Rows.Add(
-                        0, "No registrations for this event yet", "", "", "", "", "", ""
+                        0, "No registrations found matching your criteria", "", "", "", "", "", ""
                     );
 
                     DataGridViewRow placeholderRow = dgvAttendees.Rows[placeholderIndex];
@@ -698,6 +815,54 @@ namespace BarangayCogonEventManagementSystem
             {
                 // Log error silently, don't interrupt the UI
                 System.Diagnostics.Debug.WriteLine($"Error updating status for registration {registrationId}: {ex.Message}");
+            }
+        }
+
+        private void ApplyFilters()
+        {
+            try
+            {
+                string filterText = txtSearch.Text.Trim().ToLower();
+                string selectedStatus = cboStatusFilter.SelectedItem?.ToString() ?? "All";
+                string selectedRole = cboRoleFilter.SelectedItem?.ToString() ?? "All";
+
+                foreach (DataGridViewRow row in dgvAttendees.Rows)
+                {
+                    // Skip placeholder row
+                    if (row.Cells["registration_id"].Value == null)
+                        continue;
+
+                    bool visible = true;
+
+                    // Filter by search text (name or email)
+                    if (!string.IsNullOrEmpty(filterText))
+                    {
+                        string fullName = row.Cells["full_name"].Value?.ToString().ToLower() ?? "";
+                        string email = row.Cells["email"].Value?.ToString().ToLower() ?? "";
+                        visible = fullName.Contains(filterText) || email.Contains(filterText);
+                    }
+
+                    // Filter by status
+                    if (visible && selectedStatus != "All")
+                    {
+                        string status = row.Cells["status"].Value?.ToString() ?? "";
+                        visible = status == selectedStatus;
+                    }
+
+                    // Filter by role
+                    if (visible && selectedRole != "All")
+                    {
+                        string role = row.Cells["role"].Value?.ToString() ?? "";
+                        visible = role.Equals(selectedRole, StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    row.Visible = visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error applying filters: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

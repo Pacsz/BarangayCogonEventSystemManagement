@@ -12,12 +12,56 @@ namespace BarangayCogonEventManagementSystem
     public partial class frmMyQR : Form
     {
         private int userId;
+        private TextBox txtSearch;
 
         public frmMyQR(int userId)
         {
             InitializeComponent();
             this.userId = userId;
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
+            InitializeFilters();
+        }
+
+        private void InitializeFilters()
+        {
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 20),
+                Size = new Size(350, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search events...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search events...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search events...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadApprovedEvents();
+
+            this.Controls.Add(txtSearch);
+
+            // Adjust dgvQRList position
+            if (dgvQRList != null)
+            {
+                dgvQRList.Location = new Point(20, 60);
+                dgvQRList.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 80);
+            }
         }
 
         private void frmMyQR_Load(object sender, EventArgs e)
@@ -262,11 +306,26 @@ namespace BarangayCogonEventManagementSystem
                                     r.qr_code AS qr_code_data
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
-                                WHERE r.user_id = @user_id AND r.status IN ('Approved', 'Attended')
-                                ORDER BY e.start_datetime ASC";
+                                WHERE r.user_id = @user_id AND r.status IN ('Approved', 'Attended')";
 
-                MySqlParameter[] param = { new MySqlParameter("@user_id", userId) };
-                DataTable dt = DatabaseHelper.ExecuteQuery(query, param);
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+                paramsList.Add(new MySqlParameter("@user_id", userId));
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search events...")
+                    {
+                        query += @" AND (e.name LIKE @search 
+                                    OR e.venue LIKE @search)";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY e.start_datetime ASC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
 
                 // Clear existing rows
                 dgvQRList.Rows.Clear();
@@ -275,7 +334,7 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Add placeholder row
                     int placeholderIndex = dgvQRList.Rows.Add(
-                        0, "", "No approved events with QR codes yet", "", "", "", ""
+                        0, "", "No approved events found matching your criteria", "", "", "", ""
                     );
 
                     DataGridViewRow placeholderRow = dgvQRList.Rows[placeholderIndex];

@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using FontAwesome.Sharp;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
+using MySql.Data.MySqlClient;
 
 namespace BarangayCogonEventManagementSystem
 {
@@ -21,12 +22,17 @@ namespace BarangayCogonEventManagementSystem
         // Summary section
         private Panel pnlSummaryContainer;
         private Label lblSummaryData;
+
+        // Filters
+        private TextBox txtSearch;
+        private ComboBox cboTypeFilter;
         
         public frmReports()
         {
             InitializeComponent();
             CreateBeautifulUI();
             CustomizeDataGridView();
+            InitializeFilters();
             StyleButtons();
         }
 
@@ -333,9 +339,32 @@ namespace BarangayCogonEventManagementSystem
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Registered',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Present',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Pending') AS 'Pending'
-                FROM events e ORDER BY e.start_datetime DESC;";
+                FROM events e 
+                WHERE 1=1";
 
-                DataTable dt = DatabaseHelper.ExecuteQuery(query);
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+
+                // Add type filter
+                if (cboTypeFilter != null && cboTypeFilter.SelectedIndex > 0)
+                {
+                    query += " AND e.type = @type";
+                    paramsList.Add(new MySqlParameter("@type", cboTypeFilter.SelectedItem.ToString()));
+                }
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search events...")
+                    {
+                        query += " AND e.name LIKE @search";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY e.start_datetime DESC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
                 dgvReports.Rows.Clear();
 
                 // Table with clean headers (no icons)
@@ -359,7 +388,7 @@ namespace BarangayCogonEventManagementSystem
                     // Add placeholder row when no data
                     int placeholderIndex = dgvReports.Rows.Add(
                         0, // id
-                        "No events available for reporting yet", // event_name (placeholder message)
+                        "No events found matching your criteria", // event_name (placeholder message)
                         "", // date
                         "", // type
                         "", // registered
@@ -772,6 +801,70 @@ namespace BarangayCogonEventManagementSystem
                     return result;
             }
             return 0;
+        }
+
+        private void InitializeFilters()
+        {
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 720),
+                Size = new Size(280, 30),
+                Font = new System.Drawing.Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search events...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search events...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search events...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadReports();
+
+            // Type filter
+            Label lblType = new Label
+            {
+                Text = "Type:",
+                Location = new Point(320, 725),
+                Size = new Size(50, 20),
+                ForeColor = Color.White,
+                Font = new System.Drawing.Font("Segoe UI", 10F)
+            };
+
+            cboTypeFilter = new ComboBox
+            {
+                Location = new Point(375, 720),
+                Size = new Size(200, 30),
+                Font = new System.Drawing.Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboTypeFilter.Items.AddRange(new object[] { "All Types", "Community Service", "Health Drive", "Cleanup Drive", "Barangay Assembly", "Training / Workshop" });
+            cboTypeFilter.SelectedIndex = 0;
+            cboTypeFilter.SelectedIndexChanged += (s, ev) => LoadReports();
+
+            this.Controls.Add(txtSearch);
+            this.Controls.Add(lblType);
+            this.Controls.Add(cboTypeFilter);
+            txtSearch.BringToFront();
+            lblType.BringToFront();
+            cboTypeFilter.BringToFront();
         }
     }
 }

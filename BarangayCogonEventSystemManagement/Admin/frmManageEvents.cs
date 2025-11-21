@@ -65,12 +65,15 @@ namespace BarangayCogonEventManagementSystem
     public partial class frmManageEvents : Form
     {
         private ContextMenuStrip contextMenuActions;
+        private TextBox txtSearch;
+        private ComboBox cboTypeFilter;
 
         public frmManageEvents()
         {
             InitializeComponent();
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenu();
+            InitializeFilters();
             CustomizeDataGridView();
             LoadEvents();
             StyleAddButton();
@@ -121,6 +124,86 @@ namespace BarangayCogonEventManagementSystem
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.FromArgb(46, 51, 73); }
+            }
+        }
+
+        private void InitializeFilters()
+        {
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 15),
+                Size = new Size(300, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search events...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search events...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search events...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadEvents();
+
+            // Type filter label
+            Label lblFilter = new Label
+            {
+                Text = "Type:",
+                Location = new Point(340, 18),
+                Size = new Size(50, 25),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            // Type filter dropdown
+            cboTypeFilter = new ComboBox
+            {
+                Location = new Point(395, 15),
+                Size = new Size(200, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboTypeFilter.Items.AddRange(new object[] { "All Types", "Community Service", "Health Drive", "Cleanup Drive", "Barangay Assembly", "Training / Workshop" });
+            cboTypeFilter.SelectedIndex = 0;
+            cboTypeFilter.SelectedIndexChanged += (s, ev) => LoadEvents();
+
+            this.Controls.Add(txtSearch);
+            this.Controls.Add(lblFilter);
+            this.Controls.Add(cboTypeFilter);
+
+            // Ensure controls are brought to front
+            txtSearch.BringToFront();
+            lblFilter.BringToFront();
+            cboTypeFilter.BringToFront();
+
+            // Adjust dgvEvents and btnAddEvent positions
+            if (dgvEvents != null)
+            {
+                dgvEvents.Location = new Point(20, 55);
+                dgvEvents.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 115);
+            }
+
+            if (btnAddEvent != null)
+            {
+                btnAddEvent.Location = new Point(this.ClientSize.Width - 180, this.ClientSize.Height - 50);
             }
         }
 
@@ -330,8 +413,34 @@ namespace BarangayCogonEventManagementSystem
                                     type, 
                                     organizer 
                                 FROM events 
-                                ORDER BY start_datetime DESC";
-                DataTable dt = DatabaseHelper.ExecuteQuery(query);
+                                WHERE 1=1";
+
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+
+                // Add type filter
+                if (cboTypeFilter != null && cboTypeFilter.SelectedIndex > 0)
+                {
+                    query += " AND type = @type";
+                    paramsList.Add(new MySqlParameter("@type", cboTypeFilter.SelectedItem.ToString()));
+                }
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search events...")
+                    {
+                        query += @" AND (name LIKE @search 
+                                    OR venue LIKE @search 
+                                    OR type LIKE @search
+                                    OR organizer LIKE @search)";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY start_datetime DESC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
 
                 dgvEvents.Rows.Clear();
 
@@ -340,7 +449,7 @@ namespace BarangayCogonEventManagementSystem
                     // Add placeholder row when no data
                     int placeholderIndex = dgvEvents.Rows.Add(
                         0, // id
-                        "No events available yet", // name (placeholder message)
+                        "No events found matching your criteria", // name (placeholder message)
                         "", // date
                         "", // time
                         "", // venue

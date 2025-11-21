@@ -11,11 +11,16 @@ namespace BarangayCogonEventManagementSystem
 {
     public partial class frmRegistrations : Form
     {
+        private TextBox txtSearch;
+        private ComboBox cboStatusFilter;
+        private ComboBox cboRoleFilter;
+
         public frmRegistrations()
         {
             InitializeComponent();
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenuStyling();
+            InitializeFilters();
             CustomizeDataGridView();
             LoadPendingRegistrations();
         }
@@ -65,6 +70,100 @@ namespace BarangayCogonEventManagementSystem
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.FromArgb(46, 51, 73); }
+            }
+        }
+
+        private void InitializeFilters()
+        {
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 20),
+                Size = new Size(280, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search registrations...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search registrations...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search registrations...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadPendingRegistrations();
+
+            // Status filter
+            Label lblStatus = new Label
+            {
+                Text = "Status:",
+                Location = new Point(320, 25),
+                Size = new Size(60, 20),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            cboStatusFilter = new ComboBox
+            {
+                Location = new Point(385, 20),
+                Size = new Size(150, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboStatusFilter.Items.AddRange(new object[] { "All Status", "Pending", "Approved", "Checked-in", "Attended", "Rejected", "Didn't Attend" });
+            cboStatusFilter.SelectedIndex = 0;
+            cboStatusFilter.SelectedIndexChanged += (s, ev) => LoadPendingRegistrations();
+
+            // Role filter
+            Label lblRole = new Label
+            {
+                Text = "Role:",
+                Location = new Point(555, 25),
+                Size = new Size(50, 20),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            cboRoleFilter = new ComboBox
+            {
+                Location = new Point(610, 20),
+                Size = new Size(150, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboRoleFilter.Items.AddRange(new object[] { "All Roles", "Attendee", "Volunteer", "Speaker" });
+            cboRoleFilter.SelectedIndex = 0;
+            cboRoleFilter.SelectedIndexChanged += (s, ev) => LoadPendingRegistrations();
+
+            this.Controls.Add(txtSearch);
+            this.Controls.Add(lblStatus);
+            this.Controls.Add(cboStatusFilter);
+            this.Controls.Add(lblRole);
+            this.Controls.Add(cboRoleFilter);
+
+            // Adjust dgvRegistrations position
+            if (dgvRegistrations != null)
+            {
+                dgvRegistrations.Location = new Point(20, 60);
+                dgvRegistrations.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 80);
             }
         }
 
@@ -301,8 +400,41 @@ namespace BarangayCogonEventManagementSystem
                                  FROM registrations r
                                  INNER JOIN events e ON r.event_id = e.id
                                  INNER JOIN users u ON r.user_id = u.id
-                                 ORDER BY r.status DESC, e.start_datetime DESC";
-                DataTable dt = DatabaseHelper.ExecuteQuery(query);
+                                 WHERE 1=1";
+
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+
+                // Add status filter
+                if (cboStatusFilter != null && cboStatusFilter.SelectedIndex > 0)
+                {
+                    query += " AND r.status = @status";
+                    paramsList.Add(new MySqlParameter("@status", cboStatusFilter.SelectedItem.ToString()));
+                }
+
+                // Add role filter
+                if (cboRoleFilter != null && cboRoleFilter.SelectedIndex > 0)
+                {
+                    query += " AND r.role = @role";
+                    paramsList.Add(new MySqlParameter("@role", cboRoleFilter.SelectedItem.ToString().ToLower()));
+                }
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search registrations...")
+                    {
+                        query += @" AND (e.name LIKE @search 
+                                    OR u.first_name LIKE @search 
+                                    OR u.last_name LIKE @search
+                                    OR u.email LIKE @search)";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY r.status DESC, e.start_datetime DESC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
 
                 // Clear existing rows
                 dgvRegistrations.Rows.Clear();
@@ -314,7 +446,7 @@ namespace BarangayCogonEventManagementSystem
                     int placeholderIndex = dgvRegistrations.Rows.Add(
                         0, // id
                         "", // event_name
-                        "No registrations available yet", // user_name (placeholder message)
+                        "No registrations found matching your criteria", // user_name (placeholder message)
                         "", // email
                         "", // event_date
                         "", // role

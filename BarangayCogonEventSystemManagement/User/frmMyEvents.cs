@@ -12,6 +12,8 @@ namespace BarangayCogonEventManagementSystem
     {
         private int userId;
         private ContextMenuStrip contextMenuActions;
+        private TextBox txtSearch;
+        private ComboBox cboStatusFilter;
 
         public frmMyEvents(int userId)
         {
@@ -19,6 +21,75 @@ namespace BarangayCogonEventManagementSystem
             this.userId = userId;
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenu();
+            InitializeFilters();
+        }
+
+        private void InitializeFilters()
+        {
+            // Search box
+            txtSearch = new TextBox
+            {
+                Location = new Point(20, 20),
+                Size = new Size(300, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+            txtSearch.Text = "🔍 Search events...";
+            txtSearch.ForeColor = Color.Gray;
+            
+            txtSearch.Enter += (s, ev) => {
+                if (txtSearch.Text == "🔍 Search events...")
+                {
+                    txtSearch.Text = "";
+                    txtSearch.ForeColor = Color.White;
+                }
+            };
+            
+            txtSearch.Leave += (s, ev) => {
+                if (string.IsNullOrWhiteSpace(txtSearch.Text))
+                {
+                    txtSearch.Text = "🔍 Search events...";
+                    txtSearch.ForeColor = Color.Gray;
+                }
+            };
+            txtSearch.TextChanged += (s, ev) => LoadMyEvents();
+
+            // Status filter
+            Label lblFilter = new Label
+            {
+                Text = "Status:",
+                Location = new Point(340, 25),
+                Size = new Size(60, 20),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
+            };
+
+            cboStatusFilter = new ComboBox
+            {
+                Location = new Point(405, 20),
+                Size = new Size(180, 30),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboStatusFilter.Items.AddRange(new object[] { "All Status", "Pending", "Approved", "Checked-in", "Attended", "Rejected", "Didn't Attend" });
+            cboStatusFilter.SelectedIndex = 0;
+            cboStatusFilter.SelectedIndexChanged += (s, ev) => LoadMyEvents();
+
+            this.Controls.Add(txtSearch);
+            this.Controls.Add(lblFilter);
+            this.Controls.Add(cboStatusFilter);
+
+            // Adjust dgvMyEvents position
+            if (dgvMyEvents != null)
+            {
+                dgvMyEvents.Location = new Point(20, 60);
+                dgvMyEvents.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 80);
+            }
         }
 
         private void InitializeContextMenu()
@@ -171,7 +242,15 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_venue",
                 HeaderText = "Venue",
                 ReadOnly = true,
-                FillWeight = 18
+                FillWeight = 15
+            });
+
+            dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "event_type",
+                HeaderText = "Type",
+                ReadOnly = true,
+                FillWeight = 13
             });
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -248,7 +327,23 @@ namespace BarangayCogonEventManagementSystem
                 // Check if event has ended or status is rejected
                 DataGridViewRow row = dgvMyEvents.Rows[e.RowIndex];
                 var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+                bool eventHasEnded = false;
+                
+                // Safely parse the DateTime
+                if (eventEndValue != null && eventEndValue != DBNull.Value)
+                {
+                    try
+                    {
+                        DateTime eventEndDateTime = Convert.ToDateTime(eventEndValue);
+                        eventHasEnded = DateTime.Now > eventEndDateTime;
+                    }
+                    catch (FormatException)
+                    {
+                        // If conversion fails, assume event hasn't ended
+                        eventHasEnded = false;
+                    }
+                }
+                
                 string status = row.Cells["status"].Value?.ToString();
                 bool isRejected = status == "Rejected" || status == "Didn't Attend";
 
@@ -305,7 +400,23 @@ namespace BarangayCogonEventManagementSystem
 
                 // Check if event has ended or status is rejected
                 var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
+                bool eventHasEnded = false;
+                
+                // Safely parse the DateTime
+                if (eventEndValue != null && eventEndValue != DBNull.Value)
+                {
+                    try
+                    {
+                        DateTime eventEndDateTime = Convert.ToDateTime(eventEndValue);
+                        eventHasEnded = DateTime.Now > eventEndDateTime;
+                    }
+                    catch (FormatException)
+                    {
+                        // If conversion fails, assume event hasn't ended
+                        eventHasEnded = false;
+                    }
+                }
+                
                 string status = row.Cells["status"].Value?.ToString();
                 bool isRejected = status == "Rejected" || status == "Didn't Attend";
 
@@ -623,6 +734,7 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
+                // Build base query
                 string query = @"SELECT 
                                     r.id AS registration_id,
                                     e.id AS event_id,
@@ -633,25 +745,61 @@ namespace BarangayCogonEventManagementSystem
                                     END AS event_date,
                                     CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
-                                    e.end_datetime,
+                                    e.type AS event_type,
                                     r.role,
-                                    r.status
+                                    r.status,
+                                    r.qr_code,
+                                    e.end_datetime
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
-                                WHERE r.user_id = @user_id
-                                ORDER BY e.start_datetime DESC";
+                                WHERE r.user_id = @user_id";
 
-                MySqlParameter[] param = { new MySqlParameter("@user_id", userId) };
-                DataTable dt = DatabaseHelper.ExecuteQuery(query, param);
+                var paramsList = new System.Collections.Generic.List<MySqlParameter>();
+                paramsList.Add(new MySqlParameter("@user_id", userId));
+
+                // Add status filter
+                if (cboStatusFilter != null && cboStatusFilter.SelectedIndex > 0)
+                {
+                    query += " AND r.status = @status";
+                    paramsList.Add(new MySqlParameter("@status", cboStatusFilter.SelectedItem.ToString()));
+                }
+
+                // Add search filter
+                if (txtSearch != null)
+                {
+                    string searchText = txtSearch.Text;
+                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search events...")
+                    {
+                        query += @" AND (e.name LIKE @search 
+                                    OR e.venue LIKE @search 
+                                    OR e.type LIKE @search
+                                    OR r.role LIKE @search)";
+                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
+                    }
+                }
+
+                query += " ORDER BY e.start_datetime DESC";
+
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, paramsList.ToArray());
 
                 // Clear existing rows
                 dgvMyEvents.Rows.Clear();
 
                 if (dt.Rows.Count == 0)
                 {
-                    // Add placeholder row
+                    // Add placeholder row - match the column count (11 columns total)
                     int placeholderIndex = dgvMyEvents.Rows.Add(
-                        0, 0, "You haven't registered for any events yet", "", "", "", "", "", DBNull.Value, ""
+                        0, // registration_id
+                        0, // event_id
+                        "No events found matching your criteria", // event_name
+                        "", // event_date
+                        "", // event_time
+                        "", // event_venue
+                        "", // event_type
+                        "", // role
+                        "", // status
+                        DBNull.Value, // event_end_datetime
+                        "" // ActionColumn
                     );
 
                     DataGridViewRow placeholderRow = dgvMyEvents.Rows[placeholderIndex];
@@ -664,7 +812,7 @@ namespace BarangayCogonEventManagementSystem
                     foreach (DataRow dr in dt.Rows)
                     {
                         string role = dr["role"].ToString();
-                        string capitalizedRole = string.IsNullOrEmpty(role) ? role : 
+                        string capitalizedRole = string.IsNullOrEmpty(role) ? role :
                             char.ToUpper(role[0]) + role.Substring(1).ToLower();
 
                         dgvMyEvents.Rows.Add(
@@ -674,9 +822,10 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_date"],
                             dr["event_time"],
                             dr["event_venue"],
+                            dr["event_type"],
                             capitalizedRole,
                             dr["status"],
-                            dr["end_datetime"],
+                            dr["end_datetime"], // This will be properly converted to DateTime
                             "" // ActionColumn (will be custom painted)
                         );
                     }
