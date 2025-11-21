@@ -12,19 +12,18 @@ DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
 
--- USERS TABLE
+-- USERS TABLE (ROLE REMOVED ✅)
 CREATE TABLE users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255),
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(50),
   address TEXT,
   contact_number VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- EVENTS TABLE (USING DATETIME)
+-- EVENTS TABLE (USING DATETIME ✅)
 CREATE TABLE events (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -39,18 +38,21 @@ CREATE TABLE events (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- REGISTRATIONS TABLE
+-- REGISTRATIONS TABLE (ROLE IS HERE ✅)
 CREATE TABLE registrations (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   event_id INT UNSIGNED NOT NULL,
   user_id INT UNSIGNED NOT NULL,
-  role VARCHAR(50),
+  role ENUM('attendee','volunteer','speaker') NOT NULL,
   status VARCHAR(50) DEFAULT 'pending',
   qr_code VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
   UNIQUE KEY uniq_event_user (event_id, user_id),
+
   CONSTRAINT fk_reg_event FOREIGN KEY (event_id)
     REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE,
+
   CONSTRAINT fk_reg_user FOREIGN KEY (user_id)
     REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -59,8 +61,9 @@ CREATE TABLE registrations (
 CREATE TABLE attendance (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   registration_id INT UNSIGNED NOT NULL,
-  check_in_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  check_out_time TIMESTAMP NULL,
+  check_in_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  check_out_time DATETIME NULL,
+
   CONSTRAINT fk_att_reg FOREIGN KEY (registration_id)
     REFERENCES registrations(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -71,17 +74,17 @@ CREATE TABLE reports (
   event_id INT UNSIGNED NOT NULL,
   total_attendees INT UNSIGNED DEFAULT 0,
   total_volunteers INT UNSIGNED DEFAULT 0,
-  generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
   CONSTRAINT fk_rep_event FOREIGN KEY (event_id)
     REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- VIEW (UPDATED FOR DATETIME)
+-- VIEW (UPDATED FOR DATETIME ✅)
 CREATE OR REPLACE VIEW vw_event_summary AS
 SELECT
   e.id AS event_id,
   e.name AS event_name,
-
   e.start_datetime,
   e.end_datetime,
 
@@ -121,14 +124,16 @@ BEGIN
   FROM registrations
   WHERE event_id = p_event_id;
 
-  IF v_att IS NULL THEN SET v_att = 0; END IF;
-  IF v_vol IS NULL THEN SET v_vol = 0; END IF;
+  SET v_att = IFNULL(v_att, 0);
+  SET v_vol = IFNULL(v_vol, 0);
 
   INSERT INTO reports (event_id, total_attendees, total_volunteers)
   VALUES (p_event_id, v_att, v_vol);
 END$$
 
 DELIMITER ;
+
+-- SAMPLE EVENT
 INSERT INTO events 
 (name, description, start_datetime, end_datetime, venue, type, organizer)
 VALUES
