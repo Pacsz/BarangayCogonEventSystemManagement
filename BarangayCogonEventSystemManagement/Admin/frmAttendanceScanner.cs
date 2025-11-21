@@ -17,12 +17,92 @@ namespace BarangayCogonEventManagementSystem
         private Timer scanTimer;
         private string lastScannedQR = string.Empty;
         private DateTime lastScanTime = DateTime.MinValue;
+        private Bitmap currentFrame; // Store current frame for scanning
 
         public frmAttendanceScanner()
         {
             InitializeComponent();
             StyleControls();
             LoadCameras();
+            SetupScanningOverlay();
+        }
+
+        private void SetupScanningOverlay()
+        {
+            // Subscribe to the Paint event to draw the scanning frame
+            picCamera.Paint += PicCamera_Paint;
+        }
+
+        private void PicCamera_Paint(object sender, PaintEventArgs e)
+        {
+            if (picCamera.Image == null) return;
+
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Calculate the center scanning square (about 40% of the picture box size)
+            int squareSize = Math.Min(picCamera.Width, picCamera.Height) * 40 / 100;
+            int x = (picCamera.Width - squareSize) / 2;
+            int y = (picCamera.Height - squareSize) / 2;
+            Rectangle scanRect = new Rectangle(x, y, squareSize, squareSize);
+
+            // Draw semi-transparent overlay outside the scanning area
+            using (SolidBrush darkBrush = new SolidBrush(Color.FromArgb(120, 0, 0, 0)))
+            {
+                // Top overlay
+                g.FillRectangle(darkBrush, 0, 0, picCamera.Width, y);
+                // Bottom overlay
+                g.FillRectangle(darkBrush, 0, y + squareSize, picCamera.Width, picCamera.Height - (y + squareSize));
+                // Left overlay
+                g.FillRectangle(darkBrush, 0, y, x, squareSize);
+                // Right overlay
+                g.FillRectangle(darkBrush, x + squareSize, y, picCamera.Width - (x + squareSize), squareSize);
+            }
+
+            // Draw the scanning frame border
+            using (Pen framePen = new Pen(Color.FromArgb(0, 255, 0), 3))
+            {
+                g.DrawRectangle(framePen, scanRect);
+            }
+
+            // Draw corner brackets for visual emphasis
+            int cornerLength = 30;
+            int cornerThickness = 4;
+            using (Pen cornerPen = new Pen(Color.FromArgb(0, 255, 0), cornerThickness))
+            {
+                // Top-left corner
+                g.DrawLine(cornerPen, x, y, x + cornerLength, y);
+                g.DrawLine(cornerPen, x, y, x, y + cornerLength);
+
+                // Top-right corner
+                g.DrawLine(cornerPen, x + squareSize, y, x + squareSize - cornerLength, y);
+                g.DrawLine(cornerPen, x + squareSize, y, x + squareSize, y + cornerLength);
+
+                // Bottom-left corner
+                g.DrawLine(cornerPen, x, y + squareSize, x + cornerLength, y + squareSize);
+                g.DrawLine(cornerPen, x, y + squareSize, x, y + squareSize - cornerLength);
+
+                // Bottom-right corner
+                g.DrawLine(cornerPen, x + squareSize, y + squareSize, x + squareSize - cornerLength, y + squareSize);
+                g.DrawLine(cornerPen, x + squareSize, y + squareSize, x + squareSize, y + squareSize - cornerLength);
+            }
+
+            // Draw instruction text
+            string instructionText = "Position QR Code in the frame";
+            using (Font font = new Font("Segoe UI", 12F, FontStyle.Bold))
+            using (SolidBrush textBrush = new SolidBrush(Color.White))
+            {
+                SizeF textSize = g.MeasureString(instructionText, font);
+                float textX = (picCamera.Width - textSize.Width) / 2;
+                float textY = y - textSize.Height - 10;
+
+                // Draw text shadow for better visibility
+                using (SolidBrush shadowBrush = new SolidBrush(Color.FromArgb(180, 0, 0, 0)))
+                {
+                    g.DrawString(instructionText, font, shadowBrush, textX + 2, textY + 2);
+                }
+                g.DrawString(instructionText, font, textBrush, textX, textY);
+            }
         }
 
         private void StyleControls()
@@ -141,12 +221,14 @@ namespace BarangayCogonEventManagementSystem
                 videoSource.Start();
 
                 scanTimer = new Timer();
-                scanTimer.Interval = 500;
+                scanTimer.Interval = 1000; // Increased to 1 second for better performance
                 scanTimer.Tick += new EventHandler(ScanQRCode);
                 scanTimer.Start();
 
                 lblStatus.Text = "Status: Scanner running... Waiting for QR code.";
                 lblStatus.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                
+                System.Diagnostics.Debug.WriteLine("Scanner started successfully");
             }
             catch (Exception ex)
             {
@@ -159,29 +241,88 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone();
-                picCamera.Image = bitmap;
+                // Dispose old frame
+                if (currentFrame != null)
+                {
+                    currentFrame.Dispose();
+                }
+                
+                // Store the current frame for scanning
+                currentFrame = (Bitmap)eventArgs.Frame.Clone();
+                
+                // Update the display
+                if (picCamera.InvokeRequired)
+                {
+                    picCamera.Invoke(new Action(() =>
+                    {
+                        if (picCamera.Image != null)
+                        {
+                            picCamera.Image.Dispose();
+                        }
+                        picCamera.Image = (Bitmap)currentFrame.Clone();
+                        picCamera.Invalidate();
+                    }));
+                }
+                else
+                {
+                    if (picCamera.Image != null)
+                    {
+                        picCamera.Image.Dispose();
+                    }
+                    picCamera.Image = (Bitmap)currentFrame.Clone();
+                    picCamera.Invalidate();
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in Video_NewFrame: {ex.Message}");
+            }
         }
 
         private void ScanQRCode(object sender, EventArgs e)
         {
-            if (picCamera.Image == null) return;
+            if (currentFrame == null) 
+            {
+                System.Diagnostics.Debug.WriteLine("No frame available for scanning");
+                return;
+            }
 
             try
             {
-                Bitmap bitmap = new Bitmap(picCamera.Image);
-                BarcodeReader reader = new BarcodeReader();
-                var result = reader.Decode(bitmap);
+                // Create a copy of the current frame for scanning
+                Bitmap bitmapToScan = null;
+                lock (currentFrame)
+                {
+                    bitmapToScan = (Bitmap)currentFrame.Clone();
+                }
+
+                // Configure the barcode reader with proper hints for better QR detection
+                BarcodeReader reader = new BarcodeReader
+                {
+                    AutoRotate = true,
+                    TryInverted = true,
+                    Options = new ZXing.Common.DecodingOptions
+                    {
+                        TryHarder = true,
+                        PossibleFormats = new System.Collections.Generic.List<BarcodeFormat>
+                        {
+                            BarcodeFormat.QR_CODE
+                        }
+                    }
+                };
+
+                var result = reader.Decode(bitmapToScan);
+                bitmapToScan.Dispose();
 
                 if (result != null)
                 {
                     string qrText = result.Text;
+                    System.Diagnostics.Debug.WriteLine($"QR Code detected: {qrText}");
                     
                     // Prevent scanning the same QR code repeatedly within 3 seconds
                     if (qrText == lastScannedQR && (DateTime.Now - lastScanTime).TotalSeconds < 3)
                     {
+                        System.Diagnostics.Debug.WriteLine("Same QR code scanned within 3 seconds, ignoring");
                         return;
                     }
 
@@ -193,9 +334,14 @@ namespace BarangayCogonEventManagementSystem
 
                     RecordAttendance(qrText);
                 }
+                else
+                {
+                    // No QR code detected - this is normal, don't log
+                }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error scanning QR code: {ex.Message}");
                 lblStatus.Text = "Error scanning: " + ex.Message;
                 lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
             }
@@ -488,15 +634,32 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
+                if (scanTimer != null)
+                {
+                    scanTimer.Stop();
+                    scanTimer.Dispose();
+                    scanTimer = null;
+                }
+                
                 if (videoSource != null && videoSource.IsRunning)
                 {
                     videoSource.SignalToStop();
+                    videoSource.WaitForStop();
                     videoSource = null;
                 }
-                if (scanTimer != null)
-                    scanTimer.Stop();
+                
+                if (currentFrame != null)
+                {
+                    currentFrame.Dispose();
+                    currentFrame = null;
+                }
+                
+                System.Diagnostics.Debug.WriteLine("Scanner stopped");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error stopping camera: {ex.Message}");
+            }
         }
 
         private void frmAttendanceScanner_FormClosing(object sender, FormClosingEventArgs e)

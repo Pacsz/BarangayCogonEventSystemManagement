@@ -176,7 +176,7 @@ namespace BarangayCogonEventManagementSystem
             this.labelGreeting.BackColor = System.Drawing.Color.Transparent;
             this.labelGreeting.Font = new System.Drawing.Font("Segoe UI", 19.25F, System.Drawing.FontStyle.Bold);
             this.labelGreeting.ForeColor = System.Drawing.Color.White;
-            this.labelGreeting.Location = new System.Drawing.Point(845, 274);
+            this.labelGreeting.Location = new System.Drawing.Point(832, 267);
             this.labelGreeting.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelGreeting.Name = "labelGreeting";
             this.labelGreeting.Size = new System.Drawing.Size(126, 45);

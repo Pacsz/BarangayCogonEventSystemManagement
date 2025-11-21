@@ -43,6 +43,10 @@ namespace BarangayCogonEventManagementSystem
 
         private void CustomizeUpcomingEventsTable()
         {
+            // Remove existing event handlers to prevent duplicates
+            dgvUpcomingEvents.CellPainting -= dgvUpcomingEvents_CellPainting;
+            dgvUpcomingEvents.CellClick -= dgvUpcomingEvents_CellClick;
+
             dgvUpcomingEvents.Columns.Clear();
             dgvUpcomingEvents.AllowUserToAddRows = false;
             dgvUpcomingEvents.ReadOnly = true;
@@ -97,10 +101,34 @@ namespace BarangayCogonEventManagementSystem
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "registration_id",
+                HeaderText = "Registration ID",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "is_registered",
+                HeaderText = "Is Registered",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "registration_status",
+                HeaderText = "Registration Status",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "event_name",
                 HeaderText = "Event Name",
                 ReadOnly = true,
-                FillWeight = 30
+                FillWeight = 25
             });
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -108,7 +136,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_date",
                 HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 17
             });
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -116,7 +144,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_time",
                 HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 17
             });
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -124,7 +152,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_venue",
                 HeaderText = "Venue",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 18
             });
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -132,8 +160,20 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_type",
                 HeaderText = "Type",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 13
             });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "ActionColumn",
+                HeaderText = "Action",
+                ReadOnly = true,
+                FillWeight = 13
+            });
+
+            // Wire up event handlers
+            dgvUpcomingEvents.CellPainting += dgvUpcomingEvents_CellPainting;
+            dgvUpcomingEvents.CellClick += dgvUpcomingEvents_CellClick;
         }
 
         private void StyleViewAllButton()
@@ -194,7 +234,7 @@ namespace BarangayCogonEventManagementSystem
                     lblApprovedCount.Text = dtStats.Rows[0]["approved"].ToString();
                 }
 
-                // Load upcoming events (next 10 events)
+                // Load upcoming events with registration status
                 string eventsQuery = @"SELECT 
                                         e.id AS event_id,
                                         e.name AS event_name,
@@ -204,13 +244,18 @@ namespace BarangayCogonEventManagementSystem
                                         END AS event_date,
                                         CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                         e.venue AS event_venue,
-                                        e.type AS event_type
+                                        e.type AS event_type,
+                                        r.id AS registration_id,
+                                        r.status AS registration_status,
+                                        CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END AS is_registered
                                     FROM events e
+                                    LEFT JOIN registrations r ON e.id = r.event_id AND r.user_id = @user_id
                                     WHERE e.start_datetime >= NOW()
                                     ORDER BY e.start_datetime ASC
                                     LIMIT 10";
 
-                DataTable dtEvents = DatabaseHelper.ExecuteQuery(eventsQuery);
+                MySqlParameter[] eventsParams = { new MySqlParameter("@user_id", userId) };
+                DataTable dtEvents = DatabaseHelper.ExecuteQuery(eventsQuery, eventsParams);
 
                 // Clear existing rows
                 dgvUpcomingEvents.Rows.Clear();
@@ -221,11 +266,15 @@ namespace BarangayCogonEventManagementSystem
                     // Add placeholder row when no data
                     int placeholderIndex = dgvUpcomingEvents.Rows.Add(
                         0, // event_id
+                        null, // registration_id
+                        0, // is_registered
+                        null, // registration_status
                         "No upcoming events available", // event_name (placeholder message)
                         "", // event_date
                         "", // event_time
                         "", // event_venue
-                        ""  // event_type
+                        "", // event_type
+                        ""  // ActionColumn
                     );
 
                     // Style the placeholder row
@@ -241,11 +290,15 @@ namespace BarangayCogonEventManagementSystem
                     {
                         dgvUpcomingEvents.Rows.Add(
                             dr["event_id"],
+                            dr["registration_id"] == DBNull.Value ? (object)null : dr["registration_id"],
+                            dr["is_registered"],
+                            dr["registration_status"] == DBNull.Value ? (object)null : dr["registration_status"],
                             dr["event_name"],
                             dr["event_date"],
                             dr["event_time"],
                             dr["event_venue"],
-                            dr["event_type"]
+                            dr["event_type"],
+                            "" // ActionColumn (will be custom painted)
                         );
                     }
                 }
@@ -383,6 +436,377 @@ namespace BarangayCogonEventManagementSystem
         private void btnViewAllEvents_Click(object sender, EventArgs e)
         {
             btnBrowseEvents_Click(sender, e);
+        }
+
+        private void dgvUpcomingEvents_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            var actionColumn = dgvUpcomingEvents.Columns["ActionColumn"];
+            if (actionColumn == null) return;
+
+            if (e.ColumnIndex == actionColumn.Index)
+            {
+                // Paint all parts except content to ensure consistent borders
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+
+                // Check if this is a placeholder row
+                var eventIdValue = dgvUpcomingEvents.Rows[e.RowIndex].Cells["event_id"].Value;
+                if (eventIdValue == null || Convert.ToInt32(eventIdValue) == 0)
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                Rectangle cellBounds = e.CellBounds;
+                
+                // Check if user is registered for this event
+                DataGridViewRow row = dgvUpcomingEvents.Rows[e.RowIndex];
+                bool isRegistered = row.Cells["is_registered"].Value != null && 
+                                    Convert.ToBoolean(row.Cells["is_registered"].Value);
+                
+                string registrationStatus = row.Cells["registration_status"].Value?.ToString();
+                
+                // Show N/A if user is registered but status is NOT Pending
+                bool showNA = isRegistered && registrationStatus != "Pending";
+
+                if (showNA)
+                {
+                    // Draw "N/A" text for non-actionable statuses (Approved, Rejected, Attended, etc.)
+                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
+                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
+                    }
+                }
+                else
+                {
+                    // Draw action button for non-registered events or Pending registrations
+                    int buttonWidth = 90;
+                    int buttonHeight = 30;
+                    int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                    int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+                    Rectangle buttonRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                    int radius = 10;
+
+                    using (GraphicsPath path = GetRoundPath(buttonRect, radius))
+                    using (SolidBrush buttonBrush = new SolidBrush(isRegistered ? 
+                        Color.FromArgb(244, 67, 54) : Color.FromArgb(0, 126, 249)))
+                    using (SolidBrush textBrush = new SolidBrush(Color.White))
+                    using (Font btnFont = new Font("Segoe UI", 9F, FontStyle.Bold))
+                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    {
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        e.Graphics.FillPath(buttonBrush, path);
+                        e.Graphics.DrawString(isRegistered ? "Unregister" : "Register", btnFont, textBrush, buttonRect, sf);
+                    }
+                }
+
+                e.Handled = true;
+            }
+        }
+
+        private void dgvUpcomingEvents_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0 &&
+                dgvUpcomingEvents.Columns[e.ColumnIndex].Name == "ActionColumn")
+            {
+                DataGridViewRow row = dgvUpcomingEvents.Rows[e.RowIndex];
+
+                var eventIdValue = row.Cells["event_id"].Value;
+                if (eventIdValue == null || Convert.ToInt32(eventIdValue) == 0)
+                {
+                    return;
+                }
+
+                int eventId = Convert.ToInt32(row.Cells["event_id"].Value);
+                string eventName = row.Cells["event_name"].Value?.ToString();
+                string eventDate = row.Cells["event_date"].Value?.ToString();
+                string eventVenue = row.Cells["event_venue"].Value?.ToString();
+                bool isRegistered = row.Cells["is_registered"].Value != null && 
+                                    Convert.ToBoolean(row.Cells["is_registered"].Value);
+                
+                string registrationStatus = row.Cells["registration_status"].Value?.ToString();
+                
+                // Don't allow action if user is registered but status is NOT Pending
+                bool showNA = isRegistered && registrationStatus != "Pending";
+                
+                if (showNA)
+                {
+                    // No action for non-pending registrations
+                    return;
+                }
+
+                if (isRegistered)
+                {
+                    // Unregister (only for Pending status)
+                    int registrationId = Convert.ToInt32(row.Cells["registration_id"].Value);
+                    UnregisterFromEvent(registrationId, eventName);
+                }
+                else
+                {
+                    // Register
+                    RegisterForEvent(eventId, eventName, eventDate, eventVenue);
+                }
+            }
+        }
+
+        private void RegisterForEvent(int eventId, string eventName, string eventDate, string eventVenue)
+        {
+            try
+            {
+                // Prompt user to select their role for this event
+                string selectedRole = ShowRoleSelectionDialog(eventName);
+                
+                if (string.IsNullOrEmpty(selectedRole))
+                {
+                    // User cancelled the role selection
+                    return;
+                }
+
+                // Show confirmation dialog before registration
+                DialogResult confirmResult = MessageBox.Show(
+                    $"Do you want to register for this event?\n\n" +
+                    $"Event: {eventName}\n" +
+                    $"Date: {eventDate}\n" +
+                    $"Venue: {eventVenue}\n" +
+                    $"Role: {selectedRole}\n\n" +
+                    $"Your registration will be pending until approved by an administrator.",
+                    "Confirm Registration",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (confirmResult == DialogResult.Yes)
+                {
+                    try
+                    {
+                        // Check if user is already registered (safety check)
+                        string checkQuery = "SELECT id FROM registrations WHERE event_id=@event_id AND user_id=@user_id";
+                        MySqlParameter[] checkParams = {
+                            new MySqlParameter("@event_id", eventId),
+                            new MySqlParameter("@user_id", userId)
+                        };
+                        
+                        DataTable dtCheck = DatabaseHelper.ExecuteQuery(checkQuery, checkParams);
+                        if (dtCheck.Rows.Count > 0)
+                        {
+                            MessageBox.Show("You are already registered for this event.", "Already Registered",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            LoadDashboardData();
+                            return;
+                        }
+
+                        string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, qr_code, created_at)
+                                              VALUES (@event_id, @user_id, @role, 'Pending', NULL, NOW())";
+
+                        MySqlParameter[] insertParams = {
+                            new MySqlParameter("@event_id", eventId),
+                            new MySqlParameter("@user_id", userId),
+                            new MySqlParameter("@role", selectedRole.ToLower())
+                        };
+
+                        int result = DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
+                        
+                        if (result > 0)
+                        {
+                            MessageBox.Show($"Successfully registered for '{eventName}' as {selectedRole}!\n\nPlease wait for admin approval.",
+                                "Registered", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            
+                            // Reload the dashboard data
+                            LoadDashboardData();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Registration failed. Please try again.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    catch (MySqlException mysqlEx)
+                    {
+                        // Handle MySQL specific errors
+                        if (mysqlEx.Number == 1062) // Duplicate entry error
+                        {
+                            MessageBox.Show("You are already registered for this event.", "Duplicate Registration",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            LoadDashboardData();
+                        }
+                        else if (mysqlEx.Number == 1452) // Foreign key constraint fails
+                        {
+                            MessageBox.Show("Event or user not found. Please refresh and try again.", "Database Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Database error: {mysqlEx.Message}\n\nError Code: {mysqlEx.Number}", 
+                                "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error registering for event: {ex.Message}\n\nPlease contact the administrator if this problem persists.",
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error during registration: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void UnregisterFromEvent(int registrationId, string eventName)
+        {
+            try
+            {
+                // Show confirmation dialog before unregistering
+                DialogResult confirmResult = MessageBox.Show(
+                    $"Are you sure you want to unregister from this event?\n\n" +
+                    $"Event: {eventName}\n\n" +
+                    $"This action cannot be undone.",
+                    "Confirm Unregister",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (confirmResult == DialogResult.Yes)
+                {
+                    string query = "DELETE FROM registrations WHERE id=@id";
+                    MySqlParameter[] parameters = { new MySqlParameter("@id", registrationId) };
+
+                    int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
+                    if (result > 0)
+                    {
+                        MessageBox.Show($"Successfully unregistered from '{eventName}'.", 
+                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadDashboardData();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error unregistering: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private string ShowRoleSelectionDialog(string eventName)
+        {
+            // Create a custom dialog for role selection
+            Form roleDialog = new Form
+            {
+                Text = "Select Your Role",
+                Size = new Size(400, 250),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = Color.FromArgb(46, 51, 73)
+            };
+
+            Label lblMessage = new Label
+            {
+                Text = $"Please select your role for:\n{eventName}",
+                Location = new Point(20, 20),
+                Size = new Size(360, 50),
+                Font = new Font("Segoe UI", 10F),
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            ComboBox cboRole = new ComboBox
+            {
+                Location = new Point(80, 90),
+                Size = new Size(240, 30),
+                Font = new Font("Segoe UI", 11F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboRole.Items.AddRange(new object[] { "Attendee", "Volunteer", "Speaker" });
+            cboRole.SelectedIndex = 0;
+
+            Button btnOk = new Button
+            {
+                Text = "OK",
+                Location = new Point(100, 140),
+                Size = new Size(90, 35),
+                BackColor = Color.FromArgb(0, 126, 249),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.OK,
+                Cursor = Cursors.Hand
+            };
+            btnOk.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded OK button
+            btnOk.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            Button btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(210, 140),
+                Size = new Size(90, 35),
+                BackColor = Color.FromArgb(244, 67, 54),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.Cancel,
+                Cursor = Cursors.Hand
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded Cancel button
+            btnCancel.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            roleDialog.Controls.Add(lblMessage);
+            roleDialog.Controls.Add(cboRole);
+            roleDialog.Controls.Add(btnOk);
+            roleDialog.Controls.Add(btnCancel);
+
+            roleDialog.AcceptButton = btnOk;
+            roleDialog.CancelButton = btnCancel;
+
+            if (roleDialog.ShowDialog() == DialogResult.OK)
+            {
+                return cboRole.SelectedItem?.ToString();
+            }
+
+            return null;
         }
     }
 }
