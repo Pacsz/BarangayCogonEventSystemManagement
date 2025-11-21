@@ -17,12 +17,11 @@ namespace BarangayCogonEventManagementSystem
             string name = txtName.Text.Trim();
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
-            string role = cboRole.Text.Trim();
             string address = txtAddress.Text.Trim();
             string contact = txtContact.Text.Trim();
 
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email) ||
-                string.IsNullOrEmpty(password) || string.IsNullOrEmpty(role))
+                string.IsNullOrEmpty(password))
             {
                 MessageBox.Show("Please fill in all required fields.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -40,14 +39,13 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                string insertQuery = @"INSERT INTO users (name, email, password, role, address, contact_number, created_at)
-                                       VALUES (@name, @email, @password, @role, @address, @contact, NOW())";
+                string insertQuery = @"INSERT INTO users (name, email, password, address, contact_number, created_at)
+                                       VALUES (@name, @email, @password, @address, @contact, NOW())";
 
                 MySqlParameter[] insertParams = {
                     new MySqlParameter("@name", name),
                     new MySqlParameter("@email", email),
                     new MySqlParameter("@password", password),
-                    new MySqlParameter("@role", role),
                     new MySqlParameter("@address", address),
                     new MySqlParameter("@contact", contact)
                 };

@@ -302,10 +302,20 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
+                // Prompt user to select their role for this event
+                string selectedRole = ShowRoleSelectionDialog(eventName);
+                
+                if (string.IsNullOrEmpty(selectedRole))
+                {
+                    // User cancelled the role selection
+                    return;
+                }
+
                 // Show confirmation dialog before re-registering
                 DialogResult confirmResult = MessageBox.Show(
                     $"Do you want to re-register for this event?\n\n" +
-                    $"Event: {eventName}\n\n" +
+                    $"Event: {eventName}\n" +
+                    $"Role: {selectedRole}\n\n" +
                     $"Your registration will be pending until approved by an administrator.",
                     "Confirm Re-Registration",
                     MessageBoxButtons.YesNo,
@@ -323,25 +333,19 @@ namespace BarangayCogonEventManagementSystem
                         };
                         DatabaseHelper.ExecuteNonQuery(deleteQuery, deleteParams);
 
-                        // Get user role
-                        string roleQuery = "SELECT role FROM users WHERE id=@user_id";
-                        MySqlParameter[] roleParams = { new MySqlParameter("@user_id", userId) };
-                        DataTable dtRole = DatabaseHelper.ExecuteQuery(roleQuery, roleParams);
-                        string userRole = dtRole.Rows.Count > 0 ? dtRole.Rows[0]["role"].ToString() : "attendee";
-
                         // Insert new registration with qr_code explicitly set to NULL
                         string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, qr_code, created_at)
                                               VALUES (@event_id, @user_id, @role, 'Pending', NULL, NOW())";
                         MySqlParameter[] insertParams = {
                             new MySqlParameter("@event_id", eventId),
                             new MySqlParameter("@user_id", userId),
-                            new MySqlParameter("@role", userRole)
+                            new MySqlParameter("@role", selectedRole.ToLower())
                         };
 
                         int result = DatabaseHelper.ExecuteNonQuery(insertQuery, insertParams);
                         if (result > 0)
                         {
-                            MessageBox.Show($"Successfully re-registered for '{eventName}'!\n\nPlease wait for admin approval.",
+                            MessageBox.Show($"Successfully re-registered for '{eventName}' as {selectedRole}!\n\nPlease wait for admin approval.",
                                 "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             LoadMyEvents();
                         }
@@ -368,6 +372,125 @@ namespace BarangayCogonEventManagementSystem
                 MessageBox.Show("Error registering: " + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private string ShowRoleSelectionDialog(string eventName)
+        {
+            // Create a custom dialog for role selection
+            Form roleDialog = new Form
+            {
+                Text = "Select Your Role",
+                Size = new Size(400, 250),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = Color.FromArgb(46, 51, 73)
+            };
+
+            Label lblMessage = new Label
+            {
+                Text = $"Please select your role for:\n{eventName}",
+                Location = new Point(20, 20),
+                Size = new Size(360, 50),
+                Font = new Font("Segoe UI", 10F),
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            ComboBox cboRole = new ComboBox
+            {
+                Location = new Point(80, 90),
+                Size = new Size(240, 30),
+                Font = new Font("Segoe UI", 11F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboRole.Items.AddRange(new object[] { "Attendee", "Volunteer", "Speaker" });
+            cboRole.SelectedIndex = 0;
+
+            Button btnOk = new Button
+            {
+                Text = "OK",
+                Location = new Point(100, 140),
+                Size = new Size(90, 35),
+                BackColor = Color.FromArgb(0, 126, 249),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.OK,
+                Cursor = Cursors.Hand
+            };
+            btnOk.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded OK button
+            btnOk.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            Button btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(210, 140),
+                Size = new Size(90, 35),
+                BackColor = Color.FromArgb(244, 67, 54),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.Cancel,
+                Cursor = Cursors.Hand
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded Cancel button
+            btnCancel.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            roleDialog.Controls.Add(lblMessage);
+            roleDialog.Controls.Add(cboRole);
+            roleDialog.Controls.Add(btnOk);
+            roleDialog.Controls.Add(btnCancel);
+
+            roleDialog.AcceptButton = btnOk;
+            roleDialog.CancelButton = btnCancel;
+
+            if (roleDialog.ShowDialog() == DialogResult.OK)
+            {
+                return cboRole.SelectedItem?.ToString();
+            }
+
+            return null;
         }
 
         private void LoadMyEvents()

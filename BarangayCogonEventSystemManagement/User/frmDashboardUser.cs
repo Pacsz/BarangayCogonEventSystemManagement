@@ -14,19 +14,17 @@ namespace BarangayCogonEventManagementSystem
     {
         private int userId;
         private string userName;
-        private string userRole;
         private IconButton currentActiveButton;
         private readonly Color activeOrHoverColor = Color.FromArgb(46, 51, 73);
         private readonly Color defaultColor = Color.Transparent;
         private Form currentChildForm;
         private Control[] dashboardControls;
 
-        public frmDashboardUser(int userId, string userName, string userRole)
+        public frmDashboardUser(int userId, string userName)
         {
             InitializeComponent();
             this.userId = userId;
             this.userName = userName;
-            this.userRole = userRole;
             dashboardControls = new Control[]
             {
                 pnlMyEventsCard, pnlPendingCard, pnlApprovedCard, pnlUpcomingEvents
@@ -348,7 +346,7 @@ namespace BarangayCogonEventManagementSystem
         {
             HighlightNav(btnBrowseEvents);
             lblTitle.Text = "Browse Events";
-            OpenChild(new frmBrowseEvents(userId, userRole));
+            OpenChild(new frmBrowseEvents(userId));
         }
 
         private void btnMyEvents_Click(object sender, EventArgs e)

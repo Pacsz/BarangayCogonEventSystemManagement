@@ -11,8 +11,6 @@
         private System.Windows.Forms.TextBox txtEmail;
         private System.Windows.Forms.Label lblPassword;
         private System.Windows.Forms.TextBox txtPassword;
-        private System.Windows.Forms.Label lblRole;
-        private System.Windows.Forms.ComboBox cboRole;
         private System.Windows.Forms.Label lblAddress;
         private System.Windows.Forms.TextBox txtAddress;
         private System.Windows.Forms.Label lblContact;
@@ -39,8 +37,6 @@
             this.txtEmail = new System.Windows.Forms.TextBox();
             this.lblPassword = new System.Windows.Forms.Label();
             this.txtPassword = new System.Windows.Forms.TextBox();
-            this.lblRole = new System.Windows.Forms.Label();
-            this.cboRole = new System.Windows.Forms.ComboBox();
             this.lblAddress = new System.Windows.Forms.Label();
             this.txtAddress = new System.Windows.Forms.TextBox();
             this.lblContact = new System.Windows.Forms.Label();
@@ -141,37 +137,11 @@
             this.txtPassword.Size = new System.Drawing.Size(341, 32);
             this.txtPassword.TabIndex = 6;
             // 
-            // lblRole
-            // 
-            this.lblRole.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-            this.lblRole.ForeColor = System.Drawing.Color.White;
-            this.lblRole.Location = new System.Drawing.Point(719, 414);
-            this.lblRole.Name = "lblRole";
-            this.lblRole.Size = new System.Drawing.Size(100, 23);
-            this.lblRole.TabIndex = 7;
-            this.lblRole.Text = "Role";
-            // 
-            // cboRole
-            // 
-            this.cboRole.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
-            this.cboRole.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboRole.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.cboRole.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.cboRole.ForeColor = System.Drawing.Color.White;
-            this.cboRole.FormattingEnabled = true;
-            this.cboRole.Items.AddRange(new object[] {
-            "Attendee",
-            "Volunteer"});
-            this.cboRole.Location = new System.Drawing.Point(723, 440);
-            this.cboRole.Name = "cboRole";
-            this.cboRole.Size = new System.Drawing.Size(341, 33);
-            this.cboRole.TabIndex = 8;
-            // 
             // lblAddress
             // 
             this.lblAddress.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
             this.lblAddress.ForeColor = System.Drawing.Color.White;
-            this.lblAddress.Location = new System.Drawing.Point(719, 483);
+            this.lblAddress.Location = new System.Drawing.Point(719, 414);
             this.lblAddress.Name = "lblAddress";
             this.lblAddress.Size = new System.Drawing.Size(100, 23);
             this.lblAddress.TabIndex = 9;
@@ -183,7 +153,7 @@
             this.txtAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.txtAddress.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.txtAddress.ForeColor = System.Drawing.Color.White;
-            this.txtAddress.Location = new System.Drawing.Point(723, 509);
+            this.txtAddress.Location = new System.Drawing.Point(723, 440);
             this.txtAddress.Name = "txtAddress";
             this.txtAddress.Size = new System.Drawing.Size(341, 32);
             this.txtAddress.TabIndex = 10;
@@ -192,7 +162,7 @@
             // 
             this.lblContact.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
             this.lblContact.ForeColor = System.Drawing.Color.White;
-            this.lblContact.Location = new System.Drawing.Point(719, 551);
+            this.lblContact.Location = new System.Drawing.Point(719, 482);
             this.lblContact.Name = "lblContact";
             this.lblContact.Size = new System.Drawing.Size(150, 23);
             this.lblContact.TabIndex = 11;
@@ -204,7 +174,7 @@
             this.txtContact.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.txtContact.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.txtContact.ForeColor = System.Drawing.Color.White;
-            this.txtContact.Location = new System.Drawing.Point(723, 577);
+            this.txtContact.Location = new System.Drawing.Point(723, 508);
             this.txtContact.Name = "txtContact";
             this.txtContact.Size = new System.Drawing.Size(341, 32);
             this.txtContact.TabIndex = 12;
@@ -216,7 +186,7 @@
             this.btnRegister.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnRegister.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnRegister.ForeColor = System.Drawing.Color.White;
-            this.btnRegister.Location = new System.Drawing.Point(773, 625);
+            this.btnRegister.Location = new System.Drawing.Point(773, 560);
             this.btnRegister.Name = "btnRegister";
             this.btnRegister.Size = new System.Drawing.Size(240, 45);
             this.btnRegister.TabIndex = 13;
@@ -234,7 +204,7 @@
             this.btnBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnBack.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnBack.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(126)))), ((int)(((byte)(249)))));
-            this.btnBack.Location = new System.Drawing.Point(860, 717);
+            this.btnBack.Location = new System.Drawing.Point(860, 652);
             this.btnBack.Name = "btnBack";
             this.btnBack.Size = new System.Drawing.Size(77, 34);
             this.btnBack.TabIndex = 15;
@@ -268,7 +238,7 @@
             // 
             this.lblHaveAccount.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblHaveAccount.ForeColor = System.Drawing.Color.White;
-            this.lblHaveAccount.Location = new System.Drawing.Point(794, 691);
+            this.lblHaveAccount.Location = new System.Drawing.Point(794, 626);
             this.lblHaveAccount.Name = "lblHaveAccount";
             this.lblHaveAccount.Size = new System.Drawing.Size(211, 23);
             this.lblHaveAccount.TabIndex = 14;
@@ -287,8 +257,6 @@
             this.Controls.Add(this.txtEmail);
             this.Controls.Add(this.lblPassword);
             this.Controls.Add(this.txtPassword);
-            this.Controls.Add(this.lblRole);
-            this.Controls.Add(this.cboRole);
             this.Controls.Add(this.lblAddress);
             this.Controls.Add(this.txtAddress);
             this.Controls.Add(this.lblContact);
