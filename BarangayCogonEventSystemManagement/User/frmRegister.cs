@@ -14,16 +14,18 @@ namespace BarangayCogonEventManagementSystem
 
         private void btnRegister_Click(object sender, EventArgs e)
         {
-            string name = txtName.Text.Trim();
+            string firstName = txtFirstName.Text.Trim();
+            string lastName = txtLastName.Text.Trim();
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
             string address = txtAddress.Text.Trim();
             string contact = txtContact.Text.Trim();
 
-            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email) ||
-                string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) || 
+                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Please fill in all required fields.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please fill in all required fields (First Name, Last Name, Email, and Password).", 
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -35,15 +37,17 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count > 0)
                 {
-                    MessageBox.Show("This email is already registered.", "Duplicate Entry", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("This email is already registered.", "Duplicate Entry", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                string insertQuery = @"INSERT INTO users (name, email, password, address, contact_number, created_at)
-                                       VALUES (@name, @email, @password, @address, @contact, NOW())";
+                string insertQuery = @"INSERT INTO users (first_name, last_name, email, password, system_role, address, contact_number, created_at)
+                                       VALUES (@first_name, @last_name, @email, @password, 'user', @address, @contact, NOW())";
 
                 MySqlParameter[] insertParams = {
-                    new MySqlParameter("@name", name),
+                    new MySqlParameter("@first_name", firstName),
+                    new MySqlParameter("@last_name", lastName),
                     new MySqlParameter("@email", email),
                     new MySqlParameter("@password", password),
                     new MySqlParameter("@address", address),

@@ -647,7 +647,7 @@ namespace BarangayCogonEventManagementSystem
                 string recentQuery = @"SELECT 
                                         r.id,
                                         e.name AS event_name,
-                                        u.name AS user_name,
+                                        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
                                         r.role,
                                         DATE_FORMAT(r.created_at, '%b %d, %Y %h:%i %p') AS registration_date,
                                         r.status,

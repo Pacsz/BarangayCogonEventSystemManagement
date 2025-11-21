@@ -211,7 +211,7 @@ namespace BarangayCogonEventManagementSystem
                         r.id AS registration_id,
                         r.status,
                         r.event_id,
-                        u.name AS user_name,
+                        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
                         u.email,
                         e.name AS event_name,
                         e.start_datetime,

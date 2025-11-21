@@ -5,8 +5,10 @@
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.Panel pnlHeader;
         private System.Windows.Forms.Label lblTitle;
-        private System.Windows.Forms.Label lblName;
-        private System.Windows.Forms.TextBox txtName;
+        private System.Windows.Forms.Label lblFirstName;
+        private System.Windows.Forms.TextBox txtFirstName;
+        private System.Windows.Forms.Label lblLastName;
+        private System.Windows.Forms.TextBox txtLastName;
         private System.Windows.Forms.Label lblEmail;
         private System.Windows.Forms.TextBox txtEmail;
         private System.Windows.Forms.Label lblPassword;
@@ -31,8 +33,10 @@
         {
             this.pnlHeader = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
-            this.lblName = new System.Windows.Forms.Label();
-            this.txtName = new System.Windows.Forms.TextBox();
+            this.lblFirstName = new System.Windows.Forms.Label();
+            this.txtFirstName = new System.Windows.Forms.TextBox();
+            this.lblLastName = new System.Windows.Forms.Label();
+            this.txtLastName = new System.Windows.Forms.TextBox();
             this.lblEmail = new System.Windows.Forms.Label();
             this.txtEmail = new System.Windows.Forms.TextBox();
             this.lblPassword = new System.Windows.Forms.Label();
@@ -73,26 +77,47 @@
             this.lblTitle.Text = "Barangay Cogon Event Management System";
             this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblName
+            // lblFirstName
             // 
-            this.lblName.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-            this.lblName.ForeColor = System.Drawing.Color.White;
-            this.lblName.Location = new System.Drawing.Point(719, 210);
-            this.lblName.Name = "lblName";
-            this.lblName.Size = new System.Drawing.Size(120, 23);
-            this.lblName.TabIndex = 1;
-            this.lblName.Text = "Full Name";
+            this.lblFirstName.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.lblFirstName.ForeColor = System.Drawing.Color.White;
+            this.lblFirstName.Location = new System.Drawing.Point(719, 210);
+            this.lblFirstName.Name = "lblFirstName";
+            this.lblFirstName.Size = new System.Drawing.Size(120, 23);
+            this.lblFirstName.TabIndex = 1;
+            this.lblFirstName.Text = "First Name";
             // 
-            // txtName
+            // txtFirstName
             // 
-            this.txtName.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
-            this.txtName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.txtName.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.txtName.ForeColor = System.Drawing.Color.White;
-            this.txtName.Location = new System.Drawing.Point(723, 236);
-            this.txtName.Name = "txtName";
-            this.txtName.Size = new System.Drawing.Size(341, 32);
-            this.txtName.TabIndex = 2;
+            this.txtFirstName.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
+            this.txtFirstName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtFirstName.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.txtFirstName.ForeColor = System.Drawing.Color.White;
+            this.txtFirstName.Location = new System.Drawing.Point(723, 236);
+            this.txtFirstName.Name = "txtFirstName";
+            this.txtFirstName.Size = new System.Drawing.Size(165, 32);
+            this.txtFirstName.TabIndex = 2;
+            // 
+            // lblLastName
+            // 
+            this.lblLastName.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.lblLastName.ForeColor = System.Drawing.Color.White;
+            this.lblLastName.Location = new System.Drawing.Point(897, 210);
+            this.lblLastName.Name = "lblLastName";
+            this.lblLastName.Size = new System.Drawing.Size(120, 23);
+            this.lblLastName.TabIndex = 3;
+            this.lblLastName.Text = "Last Name";
+            // 
+            // txtLastName
+            // 
+            this.txtLastName.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
+            this.txtLastName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtLastName.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.txtLastName.ForeColor = System.Drawing.Color.White;
+            this.txtLastName.Location = new System.Drawing.Point(899, 236);
+            this.txtLastName.Name = "txtLastName";
+            this.txtLastName.Size = new System.Drawing.Size(165, 32);
+            this.txtLastName.TabIndex = 4;
             // 
             // lblEmail
             // 
@@ -101,7 +126,7 @@
             this.lblEmail.Location = new System.Drawing.Point(719, 278);
             this.lblEmail.Name = "lblEmail";
             this.lblEmail.Size = new System.Drawing.Size(100, 23);
-            this.lblEmail.TabIndex = 3;
+            this.lblEmail.TabIndex = 5;
             this.lblEmail.Text = "Email";
             // 
             // txtEmail
@@ -113,7 +138,7 @@
             this.txtEmail.Location = new System.Drawing.Point(723, 304);
             this.txtEmail.Name = "txtEmail";
             this.txtEmail.Size = new System.Drawing.Size(341, 32);
-            this.txtEmail.TabIndex = 4;
+            this.txtEmail.TabIndex = 6;
             // 
             // lblPassword
             // 
@@ -122,7 +147,7 @@
             this.lblPassword.Location = new System.Drawing.Point(719, 346);
             this.lblPassword.Name = "lblPassword";
             this.lblPassword.Size = new System.Drawing.Size(100, 23);
-            this.lblPassword.TabIndex = 5;
+            this.lblPassword.TabIndex = 7;
             this.lblPassword.Text = "Password";
             // 
             // txtPassword
@@ -135,7 +160,7 @@
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.PasswordChar = '●';
             this.txtPassword.Size = new System.Drawing.Size(341, 32);
-            this.txtPassword.TabIndex = 6;
+            this.txtPassword.TabIndex = 8;
             // 
             // lblAddress
             // 
@@ -251,8 +276,10 @@
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.labelGreeting);
             this.Controls.Add(this.pnlHeader);
-            this.Controls.Add(this.lblName);
-            this.Controls.Add(this.txtName);
+            this.Controls.Add(this.lblFirstName);
+            this.Controls.Add(this.txtFirstName);
+            this.Controls.Add(this.lblLastName);
+            this.Controls.Add(this.txtLastName);
             this.Controls.Add(this.lblEmail);
             this.Controls.Add(this.txtEmail);
             this.Controls.Add(this.lblPassword);

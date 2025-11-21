@@ -291,7 +291,7 @@ namespace BarangayCogonEventManagementSystem
                 string query = @"SELECT 
                                     r.id, 
                                     e.name AS event_name, 
-                                    u.name AS user_name,
+                                    CONCAT(u.first_name, ' ', u.last_name) AS user_name,
                                     u.email,
                                     DATE_FORMAT(e.start_datetime, '%b %d, %Y') AS event_date,
                                     e.end_datetime,

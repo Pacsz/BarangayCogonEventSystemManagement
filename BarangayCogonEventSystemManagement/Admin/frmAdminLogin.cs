@@ -28,27 +28,29 @@ namespace BarangayCogonEventManagementSystem
             {
                 string query = "SELECT * FROM users WHERE email = @email AND password = @password";
                 MySqlParameter[] parameters = {
-            new MySqlParameter("@email", email),
-            new MySqlParameter("@password", password)
-        };
+                    new MySqlParameter("@email", email),
+                    new MySqlParameter("@password", password)
+                };
 
                 DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
 
                 if (dt.Rows.Count > 0)
                 {
-                    string role = dt.Rows[0]["role"].ToString().ToLower();
-                    string name = dt.Rows[0]["name"].ToString();
+                    string systemRole = dt.Rows[0]["system_role"].ToString().ToLower();
+                    string firstName = dt.Rows[0]["first_name"].ToString();
+                    string lastName = dt.Rows[0]["last_name"].ToString();
+                    string fullName = $"{firstName} {lastName}";
                     int userId = Convert.ToInt32(dt.Rows[0]["id"]);
 
                     // Only allow admin
-                    if (role != "admin")
+                    if (systemRole != "admin")
                     {
                         MessageBox.Show("Access denied. Only admins can log in here.", "Login Failed",
                                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
 
-                    MessageBox.Show($"Welcome, {name}!", "Login Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"Welcome, {fullName}!", "Login Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     this.Hide();
                     frmDashboardAdmin admin = new frmDashboardAdmin();

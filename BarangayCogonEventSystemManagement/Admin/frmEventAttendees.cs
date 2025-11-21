@@ -574,7 +574,7 @@ namespace BarangayCogonEventManagementSystem
             {
                 string query = @"SELECT 
                                     r.id AS registration_id,
-                                    u.name AS full_name,
+                                    CONCAT(u.first_name, ' ', u.last_name) AS full_name,
                                     u.email,
                                     u.contact_number AS contact,
                                     r.role,
@@ -588,7 +588,7 @@ namespace BarangayCogonEventManagementSystem
                                 INNER JOIN events e ON r.event_id = e.id
                                 LEFT JOIN attendance a ON a.registration_id = r.id
                                 WHERE r.event_id = @event_id
-                                ORDER BY r.status DESC, u.name ASC";
+                                ORDER BY r.status DESC, u.first_name ASC, u.last_name ASC";
 
                 MySqlParameter[] parameters = { new MySqlParameter("@event_id", eventId) };
                 DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);

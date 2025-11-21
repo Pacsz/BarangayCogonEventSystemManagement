@@ -36,13 +36,24 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count > 0)
                 {
-                    string name = dt.Rows[0]["name"].ToString();
+                    string systemRole = dt.Rows[0]["system_role"].ToString().ToLower();
+                    string firstName = dt.Rows[0]["first_name"].ToString();
+                    string lastName = dt.Rows[0]["last_name"].ToString();
+                    string fullName = $"{firstName} {lastName}";
                     int userId = Convert.ToInt32(dt.Rows[0]["id"]);
 
-                    MessageBox.Show($"Welcome, {name}!", "Login Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Only allow users
+                    if (systemRole != "user")
+                    {
+                        MessageBox.Show("Access denied. Only users can log in here.", "Login Failed",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    MessageBox.Show($"Welcome, {fullName}!", "Login Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     this.Hide();
-                    frmDashboardUser resident = new frmDashboardUser(userId, name);
+                    frmDashboardUser resident = new frmDashboardUser(userId, fullName);
                     resident.ShowDialog();
                     this.Close();
                 }
