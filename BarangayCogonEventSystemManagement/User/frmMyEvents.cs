@@ -4,18 +4,70 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using MySql.Data.MySqlClient;
+using QRCoder;
 
 namespace BarangayCogonEventManagementSystem
 {
     public partial class frmMyEvents : Form
     {
         private int userId;
+        private ContextMenuStrip contextMenuActions;
 
         public frmMyEvents(int userId)
         {
             InitializeComponent();
             this.userId = userId;
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
+            InitializeContextMenu();
+        }
+
+        private void InitializeContextMenu()
+        {
+            // Create and style context menu for actions
+            contextMenuActions = new ContextMenuStrip();
+            contextMenuActions.BackColor = Color.FromArgb(37, 42, 64);
+            contextMenuActions.ForeColor = Color.White;
+            contextMenuActions.ShowImageMargin = false;
+            contextMenuActions.Renderer = new ToolStripProfessionalRenderer(new CustomContextMenuColorTable());
+        }
+
+        // Custom color table for context menu styling
+        private class CustomContextMenuColorTable : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemBorder
+            {
+                get { return Color.FromArgb(37, 42, 64); }
+            }
+
+            public override Color MenuBorder
+            {
+                get { return Color.FromArgb(60, 65, 90); }
+            }
+
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
         }
 
         private void frmMyEvents_Load(object sender, EventArgs e)
@@ -185,10 +237,8 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                string status = dgvMyEvents.Rows[e.RowIndex].Cells["status"].Value?.ToString();
-
                 Rectangle cellBounds = e.CellBounds;
-                int buttonWidth = 100;
+                int buttonWidth = 70;
                 int buttonHeight = 30;
                 int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
                 int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
@@ -196,36 +246,14 @@ namespace BarangayCogonEventManagementSystem
                 int radius = 10;
 
                 using (GraphicsPath path = GetRoundPath(buttonRect, radius))
+                using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
                 using (SolidBrush textBrush = new SolidBrush(Color.White))
-                using (Font btnFont = new Font("Segoe UI", 9F, FontStyle.Bold))
+                using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
                 using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
                 {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-
-                    string buttonText = "";
-                    Color buttonColor = Color.Gray;
-
-                    if (status == "Pending")
-                    {
-                        buttonText = "Unregister";
-                        buttonColor = Color.FromArgb(244, 67, 54); // Red
-                    }
-                    else if (status == "Approved" || status == "Attended")
-                    {
-                        buttonText = "N/A";
-                        buttonColor = Color.Gray;
-                    }
-                    else if (status == "Rejected")
-                    {
-                        buttonText = "Register";
-                        buttonColor = Color.FromArgb(0, 126, 249); // Blue
-                    }
-
-                    using (SolidBrush buttonBrush = new SolidBrush(buttonColor))
-                    {
-                        e.Graphics.FillPath(buttonBrush, path);
-                        e.Graphics.DrawString(buttonText, btnFont, textBrush, buttonRect, sf);
-                    }
+                    e.Graphics.FillPath(buttonBrush, path);
+                    e.Graphics.DrawString("...", btnFont, textBrush, buttonRect, sf);
                 }
 
                 e.Handled = true;
@@ -250,17 +278,86 @@ namespace BarangayCogonEventManagementSystem
                 int eventId = Convert.ToInt32(row.Cells["event_id"].Value);
                 string eventName = row.Cells["event_name"].Value?.ToString();
 
+                // Clear existing menu items
+                contextMenuActions.Items.Clear();
+
+                // Add menu items based on status
                 if (status == "Pending")
                 {
-                    // Unregister action
-                    UnregisterFromEvent(registrationId, eventName);
+                    // Show Unregister for pending registrations
+                    ToolStripMenuItem unregisterItem = new ToolStripMenuItem("✗ Unregister");
+                    unregisterItem.Font = new Font("Segoe UI", 10F);
+                    unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName);
+                    contextMenuActions.Items.Add(unregisterItem);
                 }
-                else if (status == "Rejected")
+                else if (status == "Approved" || status == "Attended")
                 {
-                    // Re-register action
-                    RegisterForEvent(eventId, eventName);
+                    // Show View QR for approved/attended registrations
+                    ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                    viewQRItem.Font = new Font("Segoe UI", 10F);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, registrationId);
+                    contextMenuActions.Items.Add(viewQRItem);
+
+                    // Add N/A option (disabled)
+                    ToolStripMenuItem naItem = new ToolStripMenuItem("N/A");
+                    naItem.Font = new Font("Segoe UI", 10F);
+                    naItem.Enabled = false;
+                    naItem.ForeColor = Color.Gray;
+                    contextMenuActions.Items.Add(naItem);
+                } else {
+                    ToolStripMenuItem naItem = new ToolStripMenuItem("N/A");
+                    naItem.Font = new Font("Segoe UI", 10F);
+                    naItem.Enabled = false;
+                    naItem.ForeColor = Color.Gray;
+                    contextMenuActions.Items.Add(naItem);
                 }
-                // N/A for Approved or Attended - do nothing
+                 // Get cell rectangle
+                 Rectangle rect = dgvMyEvents.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
+
+                // Calculate the button position (centered in cell, same as in CellPainting)
+                int buttonWidth = 70;
+                int buttonHeight = 30;
+                int buttonX = rect.Left + (rect.Width - buttonWidth) / 2;
+                int buttonY = rect.Top + (rect.Height - buttonHeight) / 2;
+
+                // Position context menu just below and to the right of the button
+                Point pt = new Point(buttonX + buttonWidth + 5, buttonY);
+
+                // Show the context menu right next to the action button
+                contextMenuActions.Show(dgvMyEvents, pt);
+            }
+        }
+
+        private void ViewQRCode(string eventName, int registrationId)
+        {
+            try
+            {
+                // Fetch QR code data and event end datetime for this registration
+                string query = @"SELECT r.qr_code, e.end_datetime 
+                                FROM registrations r
+                                INNER JOIN events e ON r.event_id = e.id
+                                WHERE r.id=@id";
+                MySqlParameter[] parameters = { new MySqlParameter("@id", registrationId) };
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
+
+                if (dt.Rows.Count == 0 || dt.Rows[0]["qr_code"] == DBNull.Value)
+                {
+                    MessageBox.Show("No QR code available for this event.", "Info",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                string qrCodeData = dt.Rows[0]["qr_code"].ToString();
+                DateTime eventEndDateTime = Convert.ToDateTime(dt.Rows[0]["end_datetime"]);
+
+                // Use the modular QR viewer form
+                frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime);
+                qrViewer.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading QR code: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

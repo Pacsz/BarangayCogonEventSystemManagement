@@ -105,7 +105,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_date",
                 HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 22
             });
 
             dgvQRList.Columns.Add(new DataGridViewTextBoxColumn
@@ -113,7 +113,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_time",
                 HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 19
+                FillWeight = 22
             });
 
             dgvQRList.Columns.Add(new DataGridViewTextBoxColumn
@@ -121,15 +121,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "event_venue",
                 HeaderText = "Venue",
                 ReadOnly = true,
-                FillWeight = 20
-            });
-
-            dgvQRList.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "status",
-                HeaderText = "Status",
-                ReadOnly = true,
-                FillWeight = 12
+                FillWeight = 22
             });
 
             dgvQRList.Columns.Add(new DataGridViewTextBoxColumn
@@ -215,6 +207,7 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                int eventId = Convert.ToInt32(row.Cells["event_id"].Value);
                 string eventName = row.Cells["event_name"].Value?.ToString();
                 string qrCodeData = row.Cells["qr_code_data"].Value?.ToString();
 
@@ -225,126 +218,32 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Show QR code in a popup
-                ShowQRCodePopup(eventName, qrCodeData);
-            }
-        }
-
-        private void ShowQRCodePopup(string eventName, string qrCodeData)
-        {
-            // Create popup form
-            Form qrPopup = new Form
-            {
-                Text = "QR Code",
-                Size = new Size(400, 550),
-                StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false,
-                BackColor = Color.FromArgb(46, 51, 73)
-            };
-
-            // Event name label
-            Label lblEventName = new Label
-            {
-                Text = eventName,
-                Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 20),
-                Size = new Size(340, 40),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-
-            // QR Code picture box
-            PictureBox picQR = new PictureBox
-            {
-                Location = new Point(90, 70),
-                Size = new Size(220, 220),
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle,
-                SizeMode = PictureBoxSizeMode.StretchImage
-            };
-
-            // Generate QR code
-            try
-            {
-                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using (QRCodeData qrData = qrGenerator.CreateQrCode(qrCodeData, QRCodeGenerator.ECCLevel.Q))
-                using (QRCode qr = new QRCode(qrData))
+                // Fetch event end datetime
+                try
                 {
-                    picQR.Image = qr.GetGraphic(6);
+                    string query = "SELECT end_datetime FROM events WHERE id=@id";
+                    MySqlParameter[] parameters = { new MySqlParameter("@id", eventId) };
+                    DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        MessageBox.Show("Event information not found.", "Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    DateTime eventEndDateTime = Convert.ToDateTime(dt.Rows[0]["end_datetime"]);
+
+                    // Use the modular QR viewer form
+                    frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime);
+                    qrViewer.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error loading event details: " + ex.Message,
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error generating QR code: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                qrPopup.Close();
-                return;
-            }
-
-            // QR Code info label
-            Label lblInfo = new Label
-            {
-                Text = "Scan this QR code at the event for attendance",
-                Font = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(158, 161, 178),
-                Location = new Point(20, 305),
-                Size = new Size(340, 40),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-
-            // Save QR button
-            Button btnSave = new Button
-            {
-                Text = "Save QR as Image",
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                BackColor = Color.FromArgb(0, 126, 249),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(200, 45),
-                Location = new Point(90, 360),
-                Cursor = Cursors.Hand
-            };
-            btnSave.FlatAppearance.BorderSize = 0;
-            btnSave.Click += (s, ev) =>
-            {
-                SaveFileDialog saveDialog = new SaveFileDialog
-                {
-                    Filter = "PNG Image|*.png",
-                    FileName = $"QR_{eventName.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.png"
-                };
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
-                {
-                    picQR.Image.Save(saveDialog.FileName);
-                    MessageBox.Show("QR Code saved successfully!", "Saved",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            };
-
-            // Close button
-            Button btnClosePopup = new Button
-            {
-                Text = "Close",
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                BackColor = Color.Gray,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(200, 45),
-                Location = new Point(90, 420),
-                Cursor = Cursors.Hand
-            };
-            btnClosePopup.FlatAppearance.BorderSize = 0;
-            btnClosePopup.Click += (s, ev) => qrPopup.Close();
-
-            qrPopup.Controls.Add(lblEventName);
-            qrPopup.Controls.Add(picQR);
-            qrPopup.Controls.Add(lblInfo);
-            qrPopup.Controls.Add(btnSave);
-            qrPopup.Controls.Add(btnClosePopup);
-
-            qrPopup.ShowDialog();
         }
 
         private void LoadApprovedEvents()
@@ -360,11 +259,10 @@ namespace BarangayCogonEventManagementSystem
                                     END AS event_date,
                                     CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
-                                    r.status,
                                     r.qr_code AS qr_code_data
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
-                                WHERE r.user_id = @user_id AND r.status = 'Approved'
+                                WHERE r.user_id = @user_id AND r.status IN ('Approved', 'Attended')
                                 ORDER BY e.start_datetime ASC";
 
                 MySqlParameter[] param = { new MySqlParameter("@user_id", userId) };
@@ -377,7 +275,7 @@ namespace BarangayCogonEventManagementSystem
                 {
                     // Add placeholder row
                     int placeholderIndex = dgvQRList.Rows.Add(
-                        0, "", "No approved events with QR codes yet", "", "", "", "", ""
+                        0, "", "No approved events with QR codes yet", "", "", "", ""
                     );
 
                     DataGridViewRow placeholderRow = dgvQRList.Rows[placeholderIndex];
@@ -396,7 +294,6 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_date"],
                             dr["event_time"],
                             dr["event_venue"],
-                            dr["status"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }
