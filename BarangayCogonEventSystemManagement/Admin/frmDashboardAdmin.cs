@@ -491,8 +491,8 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Get event end datetime for notice
-                string eventQuery = @"SELECT e.end_datetime 
+                // Get event end datetime and registration status for notice
+                string eventQuery = @"SELECT e.end_datetime, r.status 
                                      FROM registrations r
                                      INNER JOIN events e ON r.event_id = e.id
                                      WHERE r.qr_code = @qr_code";
@@ -504,10 +504,12 @@ namespace BarangayCogonEventManagementSystem
                 const int GRACE_PERIOD_HOURS = 2;
                 bool isEventEnded = false;
                 bool isGracePeriodExpired = false;
+                string registrationStatus = "Approved";
                 
                 if (eventDt.Rows.Count > 0)
                 {
                     eventEndDateTime = Convert.ToDateTime(eventDt.Rows[0]["end_datetime"]);
+                    registrationStatus = eventDt.Rows[0]["status"].ToString();
                     DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
                     isEventEnded = currentTime > eventEndDateTime;
                     isGracePeriodExpired = currentTime > attendanceDeadline;
@@ -565,7 +567,16 @@ namespace BarangayCogonEventManagementSystem
                         BackColor = Color.Transparent
                     };
 
-                    if (isGracePeriodExpired)
+                    if (registrationStatus == "Attended")
+                    {
+                        // User has completed attendance - show admin confirmation message
+                        lblNotice.Text = "✅ Attendance completed for this user\n" +
+                                       "Both check-in and check-out have been recorded\n" +
+                                       "User successfully attended this event";
+                        lblNotice.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                    }
+                    else if (isGracePeriodExpired)
                     {
                         // Grace period has expired - QR code is no longer valid
                         lblNotice.Text = "❌ Attendance period has closed.\n" +
