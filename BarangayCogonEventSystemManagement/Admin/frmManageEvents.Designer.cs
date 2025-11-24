@@ -36,15 +36,15 @@
             // 
             // btnAddEvent
             // 
-            this.btnAddEvent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAddEvent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnAddEvent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(25)))), ((int)(((byte)(118)))), ((int)(((byte)(210)))));
             this.btnAddEvent.FlatAppearance.BorderSize = 0;
             this.btnAddEvent.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnAddEvent.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             this.btnAddEvent.ForeColor = System.Drawing.Color.White;
-            this.btnAddEvent.Location = new System.Drawing.Point(980, 20);
+            this.btnAddEvent.Location = new System.Drawing.Point(970, 665);
             this.btnAddEvent.Name = "btnAddEvent";
-            this.btnAddEvent.Size = new System.Drawing.Size(150, 45);
+            this.btnAddEvent.Size = new System.Drawing.Size(160, 45);
             this.btnAddEvent.TabIndex = 1;
             this.btnAddEvent.Text = "➕ Add Event";
             this.btnAddEvent.UseVisualStyleBackColor = false;

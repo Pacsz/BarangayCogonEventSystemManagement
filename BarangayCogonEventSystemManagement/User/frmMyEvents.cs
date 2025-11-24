@@ -324,34 +324,17 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Check if event has ended or status is rejected
+                // Check if status is rejected
                 DataGridViewRow row = dgvMyEvents.Rows[e.RowIndex];
-                var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = false;
-                
-                // Safely parse the DateTime
-                if (eventEndValue != null && eventEndValue != DBNull.Value)
-                {
-                    try
-                    {
-                        DateTime eventEndDateTime = Convert.ToDateTime(eventEndValue);
-                        eventHasEnded = DateTime.Now > eventEndDateTime;
-                    }
-                    catch (FormatException)
-                    {
-                        // If conversion fails, assume event hasn't ended
-                        eventHasEnded = false;
-                    }
-                }
                 
                 string status = row.Cells["status"].Value?.ToString();
-                bool isRejected = status == "Rejected" || status == "Didn't Attend";
+                bool isRejected = status == "Rejected";
 
                 Rectangle cellBounds = e.CellBounds;
 
-                if (eventHasEnded || isRejected)
+                if (isRejected)
                 {
-                    // Draw "N/A" text for ended events or rejected registrations
+                    // Draw "N/A" text for rejected registrations
                     using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
                     using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
                     using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
@@ -398,31 +381,12 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Check if event has ended or status is rejected
-                var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = false;
-                
-                // Safely parse the DateTime
-                if (eventEndValue != null && eventEndValue != DBNull.Value)
-                {
-                    try
-                    {
-                        DateTime eventEndDateTime = Convert.ToDateTime(eventEndValue);
-                        eventHasEnded = DateTime.Now > eventEndDateTime;
-                    }
-                    catch (FormatException)
-                    {
-                        // If conversion fails, assume event hasn't ended
-                        eventHasEnded = false;
-                    }
-                }
-                
                 string status = row.Cells["status"].Value?.ToString();
-                bool isRejected = status == "Rejected" || status == "Didn't Attend";
+                bool isRejected = status == "Rejected";
 
-                if (eventHasEnded || isRejected)
+                if (isRejected)
                 {
-                    // Don't show menu for ended events or rejected registrations
+                    // Don't show menu for rejected registrations
                     return;
                 }
 
@@ -442,7 +406,7 @@ namespace BarangayCogonEventManagementSystem
                     unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName);
                     contextMenuActions.Items.Add(unregisterItem);
                 }
-                else if (status == "Approved" || status == "Attended" || status == "Checked-in")
+                else
                 {
                     // Show View QR for approved/checked-in/attended registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
@@ -472,8 +436,8 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                // Fetch QR code data and event end datetime for this registration
-                string query = @"SELECT r.qr_code, e.end_datetime 
+                // Fetch QR code data, event end datetime, and registration status
+                string query = @"SELECT r.qr_code, r.status, e.end_datetime 
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
                                 WHERE r.id=@id";
@@ -488,10 +452,11 @@ namespace BarangayCogonEventManagementSystem
                 }
 
                 string qrCodeData = dt.Rows[0]["qr_code"].ToString();
+                string registrationStatus = dt.Rows[0]["status"].ToString();
                 DateTime eventEndDateTime = Convert.ToDateTime(dt.Rows[0]["end_datetime"]);
 
-                // Use the modular QR viewer form
-                frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime);
+                // Use the modular QR viewer form with status
+                frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime, registrationStatus);
                 qrViewer.ShowDialog();
             }
             catch (Exception ex)

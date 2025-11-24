@@ -337,46 +337,28 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Check if event has ended
-                DataGridViewRow row = dgvRegistrations.Rows[e.RowIndex];
-                var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
-
                 Rectangle cellBounds = e.CellBounds;
 
-                if (eventHasEnded)
+                // Draw action button for all events (ongoing, upcoming, or ended)
+                int buttonWidth = 70;
+                int buttonHeight = 30;
+
+                // Center the button in the cell
+                int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+
+                Rectangle viewRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                int radius = 10;
+
+                using (GraphicsPath viewPath = GetRoundPath(viewRect, radius))
+                using (SolidBrush viewBrush = new SolidBrush(Color.FromArgb(0, 126, 249))) // Accent blue
+                using (SolidBrush textBrush = new SolidBrush(Color.White))
+                using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
+                using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
                 {
-                    // Draw "N/A" text for ended events
-                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
-                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
-                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                    {
-                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
-                    }
-                }
-                else
-                {
-                    // Draw action button for ongoing/upcoming events
-                    int buttonWidth = 70;
-                    int buttonHeight = 30;
-
-                    // Center the button in the cell
-                    int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
-                    int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
-
-                    Rectangle viewRect = new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
-                    int radius = 10;
-
-                    using (GraphicsPath viewPath = GetRoundPath(viewRect, radius))
-                    using (SolidBrush viewBrush = new SolidBrush(Color.FromArgb(0, 126, 249))) // Accent blue
-                    using (SolidBrush textBrush = new SolidBrush(Color.White))
-                    using (Font btnFont = new Font("Segoe UI", 12F, FontStyle.Bold))
-                    using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                    {
-                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                        e.Graphics.FillPath(viewBrush, viewPath);
-                        e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
-                    }
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.FillPath(viewBrush, viewPath);
+                    e.Graphics.DrawString("...", btnFont, textBrush, viewRect, sf);
                 }
 
                 e.Handled = true;
@@ -512,16 +494,6 @@ namespace BarangayCogonEventManagementSystem
                     // This is the placeholder row, do nothing
                     return;
                 }
-
-                // Check if event has ended
-                var eventEndValue = row.Cells["event_end_datetime"].Value;
-                bool eventHasEnded = eventEndValue != DBNull.Value && DateTime.Now > Convert.ToDateTime(eventEndValue);
-
-                if (eventHasEnded)
-                {
-                    // Don't show menu for ended events
-                    return;
-                }
                 
                 string status = row.Cells["status"].Value?.ToString();
                 int registrationId = Convert.ToInt32(row.Cells["id"].Value);
@@ -546,20 +518,6 @@ namespace BarangayCogonEventManagementSystem
                     rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
                     contextMenuActions.Items.Add(rejectItem);
                 }
-                else if (status == "Approved")
-                {
-                    // Show View QR for approved registrations
-                    ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
-                    viewQRItem.Font = new Font("Segoe UI", 10F);
-                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
-                    contextMenuActions.Items.Add(viewQRItem);
-
-                    // Option to reject approved registration
-                    ToolStripMenuItem rejectItem = new ToolStripMenuItem("✗ Reject");
-                    rejectItem.Font = new Font("Segoe UI", 10F);
-                    rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
-                    contextMenuActions.Items.Add(rejectItem);
-                } 
                 else if (status == "Rejected")
                 {
                     // Show Approve for rejected registrations (allow re-approval)
@@ -567,15 +525,28 @@ namespace BarangayCogonEventManagementSystem
                     approveItem.Font = new Font("Segoe UI", 10F);
                     approveItem.Click += (s, ev) => ApproveRegistration(registrationId, eventName, userName);
                     contextMenuActions.Items.Add(approveItem);
-                } else {
+                }
+                else
+                {
+                    // For all other statuses (Approved, Checked-in, Attended, Didn't Attend)
+                    // Show View QR option
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
                     viewQRItem.Font = new Font("Segoe UI", 10F);
                     viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
                     contextMenuActions.Items.Add(viewQRItem);
+
+                    // For Approved status only, also show option to reject
+                    if (status == "Approved")
+                    {
+                        ToolStripMenuItem rejectItem = new ToolStripMenuItem("✗ Reject");
+                        rejectItem.Font = new Font("Segoe UI", 10F);
+                        rejectItem.Click += (s, ev) => RejectRegistration(registrationId);
+                        contextMenuActions.Items.Add(rejectItem);
+                    }
                 }
 
-                    // Get cell rectangle
-                    Rectangle rect = dgvRegistrations.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
+                // Get cell rectangle
+                Rectangle rect = dgvRegistrations.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
                 
                 // Calculate the button position (centered in cell, same as in CellPainting)
                 int buttonWidth = 70;
@@ -687,6 +658,28 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                // Get event end datetime for notice
+                string eventQuery = @"SELECT e.end_datetime 
+                                     FROM registrations r
+                                     INNER JOIN events e ON r.event_id = e.id
+                                     WHERE r.qr_code = @qr_code";
+                MySqlParameter[] eventParams = { new MySqlParameter("@qr_code", qrCodeData) };
+                DataTable eventDt = DatabaseHelper.ExecuteQuery(eventQuery, eventParams);
+                
+                DateTime eventEndDateTime = DateTime.Now;
+                DateTime currentTime = DateTime.Now;
+                const int GRACE_PERIOD_HOURS = 2;
+                bool isEventEnded = false;
+                bool isGracePeriodExpired = false;
+                
+                if (eventDt.Rows.Count > 0)
+                {
+                    eventEndDateTime = Convert.ToDateTime(eventDt.Rows[0]["end_datetime"]);
+                    DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                    isEventEnded = currentTime > eventEndDateTime;
+                    isGracePeriodExpired = currentTime > attendanceDeadline;
+                }
+
                 // Generate QR code image from data
                 using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 using (QRCodeData qrData = qrGenerator.CreateQrCode(qrCodeData, QRCodeGenerator.ECCLevel.Q))
@@ -697,34 +690,126 @@ namespace BarangayCogonEventManagementSystem
                     Form qrForm = new Form
                     {
                         Text = $"QR Code - {userName}",
-                        Size = new Size(400, 450),
+                        Size = new Size(400, 540),
                         StartPosition = FormStartPosition.CenterParent,
                         FormBorderStyle = FormBorderStyle.FixedDialog,
                         MaximizeBox = false,
                         MinimizeBox = false,
-                        BackColor = Color.White
+                        BackColor = Color.FromArgb(46, 51, 73)
                     };
 
-                    PictureBox picQR = new PictureBox
-                    {
-                        Image = (Bitmap)qrImage.Clone(), // Clone the image to avoid disposal issues
-                        SizeMode = PictureBoxSizeMode.Zoom,
-                        Dock = DockStyle.Fill
-                    };
-
+                    // Event and User info header
                     Label lblInfo = new Label
                     {
                         Text = $"Event: {eventName}\nUser: {userName}",
-                        Font = new Font("Segoe UI", 10F),
+                        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                         TextAlign = ContentAlignment.MiddleCenter,
-                        Dock = DockStyle.Top,
-                        Height = 60,
-                        BackColor = Color.FromArgb(25, 118, 210),
+                        Location = new Point(20, 20),
+                        Size = new Size(360, 50),
+                        BackColor = Color.Transparent,
                         ForeColor = Color.White
                     };
 
-                    qrForm.Controls.Add(picQR);
+                    // QR Code picture box
+                    PictureBox picQR = new PictureBox
+                    {
+                        Image = (Bitmap)qrImage.Clone(), // Clone the image to avoid disposal issues
+                        SizeMode = PictureBoxSizeMode.StretchImage,
+                        Location = new Point(90, 80),
+                        Size = new Size(220, 220),
+                        BackColor = Color.White,
+                        BorderStyle = BorderStyle.FixedSingle
+                    };
+
+                    // Notice label (with event status information)
+                    Label lblNotice = new Label
+                    {
+                        Font = new Font("Segoe UI", 9F),
+                        ForeColor = Color.FromArgb(158, 161, 178),
+                        Location = new Point(20, 315),
+                        Size = new Size(360, 60),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        BackColor = Color.Transparent
+                    };
+
+                    if (isGracePeriodExpired)
+                    {
+                        // Grace period has expired - QR code is no longer valid
+                        lblNotice.Text = "❌ Attendance period has closed.\n" +
+                                       "QR code is no longer valid.\n" +
+                                       $"Grace period ended {GRACE_PERIOD_HOURS} hours after event.";
+                        lblNotice.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                    }
+                    else if (isEventEnded)
+                    {
+                        // Event has ended but still within grace period
+                        DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                        TimeSpan timeRemaining = attendanceDeadline - currentTime;
+                        string gracePeriodInfo = "";
+                        
+                        if (timeRemaining.TotalHours >= 1)
+                        {
+                            int hours = (int)timeRemaining.TotalHours;
+                            int minutes = timeRemaining.Minutes;
+                            gracePeriodInfo = $"{hours}h {minutes}m";
+                        }
+                        else
+                        {
+                            int minutes = (int)timeRemaining.TotalMinutes;
+                            gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                        }
+                        
+                        lblNotice.Text = $"⚠️ Event has ended - Grace period active\n" +
+                                       $"QR code valid for {gracePeriodInfo} more\n" +
+                                       $"Attendance can still be recorded!";
+                        lblNotice.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                    }
+                    else
+                    {
+                        lblNotice.Text = "This QR code is for attendance verification\nat the event.";
+                    }
+
+                    // Close button with rounded corners
+                    Button btnClose = new Button
+                    {
+                        Text = "Close",
+                        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                        BackColor = Color.Gray,
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Size = new Size(200, 45),
+                        Location = new Point(100, 395),
+                        Cursor = Cursors.Hand
+                    };
+                    btnClose.FlatAppearance.BorderSize = 0;
+
+                    // Add rounded corners to button
+                    btnClose.Paint += (s, e) =>
+                    {
+                        Button btn = s as Button;
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                        Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                        using (GraphicsPath path = GetRoundPath(rect, 10))
+                        {
+                            btn.Region = new Region(path);
+                            using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                            {
+                                e.Graphics.FillPath(brush, path);
+                            }
+                            TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                                btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                        }
+                    };
+
+                    btnClose.Click += (s, e) => qrForm.Close();
+
                     qrForm.Controls.Add(lblInfo);
+                    qrForm.Controls.Add(picQR);
+                    qrForm.Controls.Add(lblNotice);
+                    qrForm.Controls.Add(btnClose);
                     qrForm.ShowDialog();
                 }
             }

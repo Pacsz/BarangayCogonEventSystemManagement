@@ -262,11 +262,17 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Fetch event end datetime
+                // Fetch event end datetime and registration status
                 try
                 {
-                    string query = "SELECT end_datetime FROM events WHERE id=@id";
-                    MySqlParameter[] parameters = { new MySqlParameter("@id", eventId) };
+                    string query = @"SELECT e.end_datetime, r.status 
+                                   FROM events e
+                                   INNER JOIN registrations r ON e.id = r.event_id
+                                   WHERE e.id=@id AND r.user_id=@user_id";
+                    MySqlParameter[] parameters = { 
+                        new MySqlParameter("@id", eventId),
+                        new MySqlParameter("@user_id", userId)
+                    };
                     DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
 
                     if (dt.Rows.Count == 0)
@@ -277,9 +283,10 @@ namespace BarangayCogonEventManagementSystem
                     }
 
                     DateTime eventEndDateTime = Convert.ToDateTime(dt.Rows[0]["end_datetime"]);
+                    string registrationStatus = dt.Rows[0]["status"].ToString();
 
-                    // Use the modular QR viewer form
-                    frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime);
+                    // Use the modular QR viewer form with status
+                    frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime, registrationStatus);
                     qrViewer.ShowDialog();
                 }
                 catch (Exception ex)
@@ -306,7 +313,7 @@ namespace BarangayCogonEventManagementSystem
                                     r.qr_code AS qr_code_data
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
-                                WHERE r.user_id = @user_id AND r.status IN ('Approved', 'Attended')";
+                                WHERE r.user_id = @user_id AND r.status IN ('Approved', 'Checked-in', 'Attended', 'Didn''t Attend')";
 
                 var paramsList = new System.Collections.Generic.List<MySqlParameter>();
                 paramsList.Add(new MySqlParameter("@user_id", userId));

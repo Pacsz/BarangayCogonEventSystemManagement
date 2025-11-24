@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -11,15 +11,24 @@ namespace BarangayCogonEventManagementSystem
         private string eventName;
         private string qrCodeData;
         private DateTime eventEndDateTime;
+        private string registrationStatus;
         private bool isEventEnded;
+        private bool isGracePeriodExpired;
+        private const int GRACE_PERIOD_HOURS = 2;
 
-        public frmQRCodeViewer(string eventName, string qrCodeData, DateTime eventEndDateTime)
+        public frmQRCodeViewer(string eventName, string qrCodeData, DateTime eventEndDateTime, string registrationStatus = "Approved")
         {
             InitializeComponent();
             this.eventName = eventName;
             this.qrCodeData = qrCodeData;
             this.eventEndDateTime = eventEndDateTime;
-            this.isEventEnded = DateTime.Now > eventEndDateTime;
+            this.registrationStatus = registrationStatus;
+            
+            DateTime currentTime = DateTime.Now;
+            DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+            
+            this.isEventEnded = currentTime > eventEndDateTime;
+            this.isGracePeriodExpired = currentTime > attendanceDeadline;
             
             InitializeQRViewer();
         }
@@ -84,25 +93,66 @@ namespace BarangayCogonEventManagementSystem
             }
             this.Controls.Add(picQR);
 
-            // QR Code info label (with event ended warning if applicable)
+            // QR Code info label (with event status information)
             Label lblInfo = new Label
             {
                 Font = new Font("Segoe UI", 9F),
                 ForeColor = Color.FromArgb(158, 161, 178),
                 Location = new Point(20, 305),
-                Size = new Size(360, 45),
+                Size = new Size(360, 60),
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            if (isEventEnded)
+            // Check if user has already fully attended (checked in and out)
+            if (registrationStatus == "Attended")
             {
-                lblInfo.Text = "? This event has ended.\nQR code is no longer valid for attendance.";
-                lblInfo.ForeColor = Color.FromArgb(255, 152, 0); // Orange warning color
+                // User has completed attendance - show congratulatory message
+                lblInfo.Text = "✅ Congratulations! You've completed your attendance\n" +
+                              "You successfully checked in and checked out\n" +
+                              "Thank you for participating in this event!";
+                lblInfo.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            }
+            else if (isGracePeriodExpired)
+            {
+                // Grace period has expired - QR code is no longer valid
+                lblInfo.Text = "⏱️ Sorry, the check-in period has ended\n" +
+                              "This QR code is no longer active\n" +
+                              $"(Check-in closed {GRACE_PERIOD_HOURS} hours after event ended)";
+                lblInfo.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            }
+            else if (isEventEnded)
+            {
+                // Event has ended but still within grace period
+                DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                TimeSpan timeRemaining = attendanceDeadline - DateTime.Now;
+                string gracePeriodInfo = "";
+                
+                if (timeRemaining.TotalHours >= 1)
+                {
+                    int hours = (int)timeRemaining.TotalHours;
+                    int minutes = timeRemaining.Minutes;
+                    gracePeriodInfo = $"{hours}h {minutes}m";
+                }
+                else
+                {
+                    int minutes = (int)timeRemaining.TotalMinutes;
+                    gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                }
+                
+                lblInfo.Text = $"⏰ Hurry! Event has ended but you can still check in\n" +
+                              $"Your QR code is valid for {gracePeriodInfo} more\n" +
+                              $"Please scan at the registration desk now!";
+                lblInfo.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
                 lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             }
             else
             {
-                lblInfo.Text = "Scan this QR code at the event for attendance";
+                // Event is ongoing or hasn't started yet
+                lblInfo.Text = "📱 Show this QR code when you arrive at the event\n" +
+                              "Present it to the registration desk for check-in\n" +
+                              $"(You can check in anytime during the event + {GRACE_PERIOD_HOURS} hours after)";
             }
             this.Controls.Add(lblInfo);
 
@@ -115,7 +165,7 @@ namespace BarangayCogonEventManagementSystem
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(200, 45),
-                Location = new Point(100, 365),
+                Location = new Point(100, 380),
                 Cursor = Cursors.Hand,
                 Tag = picQR // Store reference to picture box for save functionality
             };
@@ -152,7 +202,7 @@ namespace BarangayCogonEventManagementSystem
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(200, 45),
-                Location = new Point(100, 425),
+                Location = new Point(100, 440),
                 Cursor = Cursors.Hand
             };
             btnClose.FlatAppearance.BorderSize = 0;

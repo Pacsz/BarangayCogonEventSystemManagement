@@ -491,6 +491,28 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                // Get event end datetime for notice
+                string eventQuery = @"SELECT e.end_datetime 
+                                     FROM registrations r
+                                     INNER JOIN events e ON r.event_id = e.id
+                                     WHERE r.qr_code = @qr_code";
+                MySqlParameter[] eventParams = { new MySqlParameter("@qr_code", qrCodeData) };
+                DataTable eventDt = DatabaseHelper.ExecuteQuery(eventQuery, eventParams);
+                
+                DateTime eventEndDateTime = DateTime.Now;
+                DateTime currentTime = DateTime.Now;
+                const int GRACE_PERIOD_HOURS = 2;
+                bool isEventEnded = false;
+                bool isGracePeriodExpired = false;
+                
+                if (eventDt.Rows.Count > 0)
+                {
+                    eventEndDateTime = Convert.ToDateTime(eventDt.Rows[0]["end_datetime"]);
+                    DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                    isEventEnded = currentTime > eventEndDateTime;
+                    isGracePeriodExpired = currentTime > attendanceDeadline;
+                }
+
                 // Generate QR code image from data
                 using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 using (QRCodeData qrData = qrGenerator.CreateQrCode(qrCodeData, QRCodeGenerator.ECCLevel.Q))
@@ -501,34 +523,126 @@ namespace BarangayCogonEventManagementSystem
                     Form qrForm = new Form
                     {
                         Text = $"QR Code - {userName}",
-                        Size = new Size(400, 450),
+                        Size = new Size(400, 540),
                         StartPosition = FormStartPosition.CenterParent,
                         FormBorderStyle = FormBorderStyle.FixedDialog,
                         MaximizeBox = false,
                         MinimizeBox = false,
-                        BackColor = Color.White
+                        BackColor = Color.FromArgb(46, 51, 73)
                     };
 
-                    PictureBox picQR = new PictureBox
-                    {
-                        Image = (Bitmap)qrImage.Clone(),
-                        SizeMode = PictureBoxSizeMode.Zoom,
-                        Dock = DockStyle.Fill
-                    };
-
+                    // Event and User info header
                     Label lblInfo = new Label
                     {
                         Text = $"Event: {eventName}\nUser: {userName}",
-                        Font = new Font("Segoe UI", 10F),
+                        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                         TextAlign = ContentAlignment.MiddleCenter,
-                        Dock = DockStyle.Top,
-                        Height = 60,
-                        BackColor = Color.FromArgb(0, 126, 249),
+                        Location = new Point(20, 20),
+                        Size = new Size(360, 50),
+                        BackColor = Color.Transparent,
                         ForeColor = Color.White
                     };
 
-                    qrForm.Controls.Add(picQR);
+                    // QR Code picture box
+                    PictureBox picQR = new PictureBox
+                    {
+                        Image = (Bitmap)qrImage.Clone(),
+                        SizeMode = PictureBoxSizeMode.StretchImage,
+                        Location = new Point(90, 80),
+                        Size = new Size(220, 220),
+                        BackColor = Color.White,
+                        BorderStyle = BorderStyle.FixedSingle
+                    };
+
+                    // Notice label (with event status information)
+                    Label lblNotice = new Label
+                    {
+                        Font = new Font("Segoe UI", 9F),
+                        ForeColor = Color.FromArgb(158, 161, 178),
+                        Location = new Point(20, 315),
+                        Size = new Size(360, 60),
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        BackColor = Color.Transparent
+                    };
+
+                    if (isGracePeriodExpired)
+                    {
+                        // Grace period has expired - QR code is no longer valid
+                        lblNotice.Text = "❌ Attendance period has closed.\n" +
+                                       "QR code is no longer valid.\n" +
+                                       $"Grace period ended {GRACE_PERIOD_HOURS} hours after event.";
+                        lblNotice.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                    }
+                    else if (isEventEnded)
+                    {
+                        // Event has ended but still within grace period
+                        DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                        TimeSpan timeRemaining = attendanceDeadline - currentTime;
+                        string gracePeriodInfo = "";
+                        
+                        if (timeRemaining.TotalHours >= 1)
+                        {
+                            int hours = (int)timeRemaining.TotalHours;
+                            int minutes = timeRemaining.Minutes;
+                            gracePeriodInfo = $"{hours}h {minutes}m";
+                        }
+                        else
+                        {
+                            int minutes = (int)timeRemaining.TotalMinutes;
+                            gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                        }
+                        
+                        lblNotice.Text = $"⚠️ Event has ended - Grace period active\n" +
+                                       $"QR code valid for {gracePeriodInfo} more\n" +
+                                       $"Attendance can still be recorded!";
+                        lblNotice.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                    }
+                    else
+                    {
+                        lblNotice.Text = "This QR code is for attendance verification\nat the event.";
+                    }
+
+                    // Close button with rounded corners
+                    Button btnClose = new Button
+                    {
+                        Text = "Close",
+                        Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                        BackColor = Color.Gray,
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Size = new Size(200, 45),
+                        Location = new Point(100, 395),
+                        Cursor = Cursors.Hand
+                    };
+                    btnClose.FlatAppearance.BorderSize = 0;
+
+                    // Add rounded corners to button
+                    btnClose.Paint += (s, e) =>
+                    {
+                        Button btn = s as Button;
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+                        Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                        using (GraphicsPath path = GetRoundPath(rect, 10))
+                        {
+                            btn.Region = new Region(path);
+                            using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                            {
+                                e.Graphics.FillPath(brush, path);
+                            }
+                            TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                                btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                        }
+                    };
+
+                    btnClose.Click += (s, e) => qrForm.Close();
+
                     qrForm.Controls.Add(lblInfo);
+                    qrForm.Controls.Add(picQR);
+                    qrForm.Controls.Add(lblNotice);
+                    qrForm.Controls.Add(btnClose);
                     qrForm.ShowDialog();
                 }
             }

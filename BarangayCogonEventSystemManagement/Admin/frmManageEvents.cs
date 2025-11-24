@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using MySql.Data.MySqlClient;
+using FontAwesome.Sharp;
 
 namespace BarangayCogonEventManagementSystem
 {
@@ -67,12 +68,18 @@ namespace BarangayCogonEventManagementSystem
         private ContextMenuStrip contextMenuActions;
         private TextBox txtSearch;
         private ComboBox cboTypeFilter;
+        
+        // Status cards
+        private Panel pnlUpcomingCard;
+        private Panel pnlOngoingCard;
+        private Panel pnlEndedCard;
 
         public frmManageEvents()
         {
             InitializeComponent();
             this.BackColor = Color.FromArgb(46, 51, 73); // Match main panel background
             InitializeContextMenu();
+            CreateStatusCards();
             InitializeFilters();
             CustomizeDataGridView();
             LoadEvents();
@@ -125,6 +132,100 @@ namespace BarangayCogonEventManagementSystem
             {
                 get { return Color.FromArgb(46, 51, 73); }
             }
+        }
+
+        private void CreateStatusCards()
+        {
+            // Calculate card positions to maximize width across the form
+            // Position cards below the filters (Y=55 to be on same row as dgvEvents starts)
+            int spacing = 15;
+            int cardY = 55;
+            int startX = 20;
+            
+            // Calculate card width to maximize space: (form width - left margin - right margin - 2 spacings) / 3 cards
+            int availableWidth = this.ClientSize.Width - 40; // Total width minus left and right margins
+            int cardWidth = (availableWidth - (spacing * 2)) / 3; // Divide by 3 cards, subtract spacing
+            int cardHeight = 100;
+
+            // Upcoming Events Card (Blue)
+            pnlUpcomingCard = CreateStatCard(startX, cardY, cardWidth, cardHeight, 
+                Color.FromArgb(0, 126, 249), IconChar.CalendarPlus, "Upcoming", "0");
+            
+            // Ongoing Events Card (Orange)
+            pnlOngoingCard = CreateStatCard(startX + cardWidth + spacing, cardY, cardWidth, cardHeight,
+                Color.FromArgb(255, 152, 0), IconChar.Clock, "Ongoing", "0");
+            
+            // Ended Events Card (Green)
+            pnlEndedCard = CreateStatCard(startX + (cardWidth + spacing) * 2, cardY, cardWidth, cardHeight,
+                Color.FromArgb(76, 175, 80), IconChar.CheckCircle, "Ended", "0");
+            
+            this.Controls.Add(pnlUpcomingCard);
+            this.Controls.Add(pnlOngoingCard);
+            this.Controls.Add(pnlEndedCard);
+            
+            pnlUpcomingCard.BringToFront();
+            pnlOngoingCard.BringToFront();
+            pnlEndedCard.BringToFront();
+        }
+
+        private Panel CreateStatCard(int x, int y, int width, int height, Color iconColor, IconChar icon, string labelText, string countText)
+        {
+            Panel card = new Panel
+            {
+                Location = new Point(x, y),
+                Size = new Size(width, height),
+                BackColor = Color.FromArgb(37, 42, 64)
+            };
+
+            IconPictureBox iconBox = new IconPictureBox
+            {
+                Location = new Point(15, 25),
+                Size = new Size(35, 35),
+                IconChar = icon,
+                IconColor = iconColor,
+                IconSize = 35,
+                BackColor = Color.Transparent
+            };
+
+            Label lblCount = new Label
+            {
+                Location = new Point(60, 15),
+                Size = new Size(width - 75, 40), // Adjust width based on card width
+                Text = countText,
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold),
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.Transparent,
+                Tag = "count"
+            };
+
+            Label lblLabel = new Label
+            {
+                Location = new Point(60, 55),
+                Size = new Size(width - 75, 25), // Adjust width based on card width
+                Text = labelText,
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.FromArgb(158, 161, 178),
+                BackColor = Color.Transparent
+            };
+
+            card.Controls.Add(iconBox);
+            card.Controls.Add(lblCount);
+            card.Controls.Add(lblLabel);
+
+            return card;
+        }
+
+        private void UpdateStatusCards(int upcoming, int ongoing, int ended)
+        {
+            foreach (Control c in pnlUpcomingCard.Controls)
+                if (c is Label l && l.Tag?.ToString() == "count") l.Text = upcoming.ToString();
+            
+            foreach (Control c in pnlOngoingCard.Controls)
+                if (c is Label l && l.Tag?.ToString() == "count") l.Text = ongoing.ToString();
+            
+            foreach (Control c in pnlEndedCard.Controls)
+                if (c is Label l && l.Tag?.ToString() == "count") l.Text = ended.ToString();
         }
 
         private void InitializeFilters()
@@ -194,17 +295,14 @@ namespace BarangayCogonEventManagementSystem
             lblFilter.BringToFront();
             cboTypeFilter.BringToFront();
 
-            // Adjust dgvEvents and btnAddEvent positions
+            // Adjust dgvEvents position to accommodate status cards below filters
             if (dgvEvents != null)
             {
-                dgvEvents.Location = new Point(20, 55);
-                dgvEvents.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 115);
+                dgvEvents.Location = new Point(20, 170);  // Moved down to be below status cards (55 + 100 + 15 spacing)
+                dgvEvents.Size = new Size(this.ClientSize.Width - 40, this.ClientSize.Height - 230);
             }
 
-            if (btnAddEvent != null)
-            {
-                btnAddEvent.Location = new Point(this.ClientSize.Width - 180, this.ClientSize.Height - 50);
-            }
+            // btnAddEvent position is now controlled by Designer (anchored to bottom-right)
         }
 
         private void CustomizeDataGridView()
@@ -267,10 +365,26 @@ namespace BarangayCogonEventManagementSystem
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "start_datetime",
+                HeaderText = "Start DateTime",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "end_datetime",
+                HeaderText = "End DateTime",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "name",
                 HeaderText = "Event Name",
                 ReadOnly = true,
-                FillWeight = 20
+                FillWeight = 18
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -278,7 +392,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "date",
                 HeaderText = "Event Date",
                 ReadOnly = true,
-                FillWeight = 14
+                FillWeight = 12
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -286,7 +400,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "time",
                 HeaderText = "Event Schedule",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 13
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -294,7 +408,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "venue",
                 HeaderText = "Venue",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 13
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -302,7 +416,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "type",
                 HeaderText = "Type",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 13
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -310,7 +424,15 @@ namespace BarangayCogonEventManagementSystem
                 Name = "organizer",
                 HeaderText = "Organizer",
                 ReadOnly = true,
-                FillWeight = 15
+                FillWeight = 13
+            });
+
+            dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "status",
+                HeaderText = "Status",
+                ReadOnly = true,
+                FillWeight = 10
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -326,7 +448,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
-                FillWeight = 13
+                FillWeight = 8
             });
 
             // Wire up event handlers
@@ -444,17 +566,29 @@ namespace BarangayCogonEventManagementSystem
 
                 dgvEvents.Rows.Clear();
 
+                // Calculate status counts
+                int upcomingCount = 0;
+                int ongoingCount = 0;
+                int endedCount = 0;
+                DateTime now = DateTime.Now;
+
                 if (dt.Rows.Count == 0)
                 {
+                    // Update status cards with zeros
+                    UpdateStatusCards(0, 0, 0);
+
                     // Add placeholder row when no data
                     int placeholderIndex = dgvEvents.Rows.Add(
                         0, // id
+                        null, // start_datetime
+                        null, // end_datetime
                         "No events found matching your criteria", // name (placeholder message)
                         "", // date
                         "", // time
                         "", // venue
                         "", // type
                         "", // organizer
+                        "", // status
                         "", // description
                         ""  // ActionColumn
                     );
@@ -469,18 +603,54 @@ namespace BarangayCogonEventManagementSystem
                 {
                     foreach (DataRow dr in dt.Rows)
                     {
-                        dgvEvents.Rows.Add(
+                        DateTime startDateTime = Convert.ToDateTime(dr["start_datetime"]);
+                        DateTime endDateTime = Convert.ToDateTime(dr["end_datetime"]);
+                        
+                        // Determine status
+                        string status;
+                        Color statusColor;
+                        
+                        if (now < startDateTime)
+                        {
+                            status = "🔵 Upcoming";
+                            statusColor = Color.FromArgb(0, 126, 249); // Blue
+                            upcomingCount++;
+                        }
+                        else if (now >= startDateTime && now <= endDateTime)
+                        {
+                            status = "🟠 Ongoing";
+                            statusColor = Color.FromArgb(255, 152, 0); // Orange
+                            ongoingCount++;
+                        }
+                        else
+                        {
+                            status = "🟢 Ended";
+                            statusColor = Color.FromArgb(76, 175, 80); // Green
+                            endedCount++;
+                        }
+
+                        int rowIndex = dgvEvents.Rows.Add(
                             dr["id"],
+                            dr["start_datetime"],
+                            dr["end_datetime"],
                             dr["name"],
                             dr["date_display"],
                             dr["time_display"],
                             dr["venue"],
                             dr["type"],
                             dr["organizer"],
+                            status,
                             dr["description"],
                             ""
                         );
+
+                        // Style the status cell with color
+                        dgvEvents.Rows[rowIndex].Cells["status"].Style.ForeColor = statusColor;
+                        dgvEvents.Rows[rowIndex].Cells["status"].Style.Font = new Font("Segoe UI", 10, FontStyle.Bold);
                     }
+
+                    // Update status cards
+                    UpdateStatusCards(upcomingCount, ongoingCount, endedCount);
                 }
 
                 dgvEvents.ClearSelection();

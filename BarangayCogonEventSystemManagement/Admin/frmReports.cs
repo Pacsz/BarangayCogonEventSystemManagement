@@ -24,7 +24,6 @@ namespace BarangayCogonEventManagementSystem
         private Label lblSummaryData;
 
         // Filters
-        private TextBox txtSearch;
         private ComboBox cboTypeFilter;
         
         public frmReports()
@@ -32,7 +31,6 @@ namespace BarangayCogonEventManagementSystem
             InitializeComponent();
             CreateBeautifulUI();
             CustomizeDataGridView();
-            InitializeFilters();
             StyleButtons();
         }
 
@@ -70,12 +68,15 @@ namespace BarangayCogonEventManagementSystem
             pnlLeftContainer.Controls.Add(pnlAttendanceRateCard);
             pnlLeftContainer.Controls.Add(pnlPendingCard);
 
-            // Table - adjusted size to fill space without refresh button
+            // Initialize the filter at the top (before the table)
+            InitializeFilters(pnlLeftContainer);
+
+            // Table - adjusted position to be below the filter
             if (dgvReports != null)
             {
                 dgvReports.Parent = pnlLeftContainer;
-                dgvReports.Location = new Point(0, 130);
-                dgvReports.Size = new Size(800, 490);
+                dgvReports.Location = new Point(0, 165);
+                dgvReports.Size = new Size(800, 455);
             }
 
             // Export PDF button - centered without refresh button
@@ -138,7 +139,7 @@ namespace BarangayCogonEventManagementSystem
                 Location = new Point(15, 75),
                 Size = new Size(260, 590),
                 BackColor = Color.Transparent,
-                Font = new System.Drawing.Font("Segoe UI", 10.5F),
+                Font = new System.Drawing.Font("Segoe UI", 10F),
                 ForeColor = Color.White,
                 Text = "Loading...",
                 AutoSize = false
@@ -333,11 +334,21 @@ namespace BarangayCogonEventManagementSystem
             {
                 string query = @"
                 SELECT 
-                    e.id, e.name AS 'Event Name', e.start_datetime AS 'Start DateTime', e.type AS 'Type',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'attendee' AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Attendees',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'volunteer' AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Volunteers',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Registered',
-                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended')) AS 'Present',
+                    e.id, 
+                    e.name AS 'Event Name', 
+                    e.start_datetime AS 'Start DateTime', 
+                    e.end_datetime AS 'End DateTime',
+                    e.type AS 'Type',
+                    CASE 
+                        WHEN DATE(e.start_datetime) = DATE(e.end_datetime) THEN DATE_FORMAT(e.start_datetime, '%b %d, %Y')
+                        ELSE CONCAT(DATE_FORMAT(e.start_datetime, '%b %d'), ' - ', DATE_FORMAT(e.end_datetime, '%b %d, %Y'))
+                    END AS 'date_display',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'attendee' AND r.status IN ('Approved', 'Checked-in', 'Attended', ""Didn't Attend"")) AS 'Attendees',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'volunteer' AND r.status IN ('Approved', 'Checked-in', 'Attended', ""Didn't Attend"")) AS 'Volunteers',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.role = 'speaker' AND r.status IN ('Approved', 'Checked-in', 'Attended', ""Didn't Attend"")) AS 'Speakers',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status IN ('Approved', 'Checked-in', 'Attended', ""Didn't Attend"")) AS 'Registered',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Attended') AS 'Attended',
+                    (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = ""Didn't Attend"") AS 'DidntAttend',
                     (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'Pending') AS 'Pending'
                 FROM events e 
                 WHERE 1=1";
@@ -349,17 +360,6 @@ namespace BarangayCogonEventManagementSystem
                 {
                     query += " AND e.type = @type";
                     paramsList.Add(new MySqlParameter("@type", cboTypeFilter.SelectedItem.ToString()));
-                }
-
-                // Add search filter
-                if (txtSearch != null)
-                {
-                    string searchText = txtSearch.Text;
-                    if (!string.IsNullOrWhiteSpace(searchText) && searchText != "🔍 Search events...")
-                    {
-                        query += " AND e.name LIKE @search";
-                        paramsList.Add(new MySqlParameter("@search", "%" + searchText + "%"));
-                    }
                 }
 
                 query += " ORDER BY e.start_datetime DESC";
@@ -375,12 +375,12 @@ namespace BarangayCogonEventManagementSystem
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "date", HeaderText = "Event Date", FillWeight = 15 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "type", HeaderText = "Type", FillWeight = 18 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "registered", HeaderText = "Registered", FillWeight = 12 });
-                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "present", HeaderText = "Attended", FillWeight = 12 });
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "attended", HeaderText = "Attended", FillWeight = 12 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Attendance %", FillWeight = 17 });
                 }
 
                 int totalEvents = dt.Rows.Count;
-                int totalAttendees = 0, totalVolunteers = 0, totalRegistered = 0, totalPresent = 0, totalPending = 0, completed = 0;
+                int totalAttendees = 0, totalVolunteers = 0, totalSpeakers = 0, totalRegistered = 0, totalAttended = 0, totalDidntAttend = 0, totalPending = 0, completed = 0;
 
                 // Check if there's data
                 if (dt.Rows.Count == 0)
@@ -392,7 +392,7 @@ namespace BarangayCogonEventManagementSystem
                         "", // date
                         "", // type
                         "", // registered
-                        "", // present
+                        "", // attended
                         ""  // rate
                     );
 
@@ -414,50 +414,50 @@ namespace BarangayCogonEventManagementSystem
                         $"👥 PARTICIPANTS\n" +
                         $"  • Attendees: 0\n" +
                         $"  • Volunteers: 0\n" +
+                        $"  • Speakers: 0\n" +
                         $"  • Total Registered: 0\n\n" +
                         $"✓ ATTENDANCE\n" +
-                        $"  • Fully Attended: 0\n" +
-                        $"  • Checked-in: 0\n" +
+                        $"  • Attended: 0\n" +
+                        $"  • Didn't Attend: 0\n" +
                         $"  • Overall Rate: 0.0%\n\n" +
                         $"⏳ PENDING\n" +
                         $"  • Awaiting Approval: 0\n\n" +
                         $"📈 AVERAGES\n" +
                         $"  • Attendees/Event: 0.0\n" +
-                        $"  • Volunteers/Event: 0.0";
+                        $"  • Volunteers/Event: 0.0\n" +
+                        $"  • Speakers/Event: 0.0\n" +
+                        $"  • Registered/Event: 0.0";
                 }
                 else
                 {
-                    // Count total checked-in and attended across all events
-                    string statusCountQuery = @"
-                        SELECT 
-                            (SELECT COUNT(*) FROM registrations WHERE status = 'Attended') AS total_attended,
-                            (SELECT COUNT(*) FROM registrations WHERE status = 'Checked-in') AS total_checked_in";
-                    DataTable dtStatusCounts = DatabaseHelper.ExecuteQuery(statusCountQuery);
-                    int totalAttended = dtStatusCounts.Rows.Count > 0 ? Convert.ToInt32(dtStatusCounts.Rows[0]["total_attended"]) : 0;
-                    int totalCheckedIn = dtStatusCounts.Rows.Count > 0 ? Convert.ToInt32(dtStatusCounts.Rows[0]["total_checked_in"]) : 0;
-
+                    // Calculate totals from the FILTERED event results
                     foreach (DataRow dr in dt.Rows)
                     {
                         int attendees = Convert.ToInt32(dr["Attendees"]);
                         int volunteers = Convert.ToInt32(dr["Volunteers"]);
+                        int speakers = Convert.ToInt32(dr["Speakers"]);
                         int registered = Convert.ToInt32(dr["Registered"]);
-                        int present = Convert.ToInt32(dr["Present"]);
+                        int attended = Convert.ToInt32(dr["Attended"]);
+                        int didntAttend = Convert.ToInt32(dr["DidntAttend"]);
                         int pending = Convert.ToInt32(dr["Pending"]);
 
                         totalAttendees += attendees;
                         totalVolunteers += volunteers;
+                        totalSpeakers += speakers;
                         totalRegistered += registered;
-                        totalPresent += present;
+                        totalAttended += attended;
+                        totalDidntAttend += didntAttend;
                         totalPending += pending;
 
                         DateTime eventDate = Convert.ToDateTime(dr["Start DateTime"]);
                         if (eventDate < DateTime.Now) completed++;
 
-                        double rate = registered > 0 ? ((double)present / registered) * 100 : 0;
+                        // Calculate attendance rate based on Attended / Registered
+                        double rate = registered > 0 ? ((double)attended / registered) * 100 : 0;
                         string rateStr = rate > 0 ? (rate >= 90 ? "🟢 " : rate >= 70 ? "🟡 " : "🔴 ") + rate.ToString("F1") + "%" : "N/A";
 
-                        int idx = dgvReports.Rows.Add(dr["id"], dr["Event Name"], eventDate.ToString("MMM dd"), 
-                            dr["Type"], registered, present, rateStr);
+                        int idx = dgvReports.Rows.Add(dr["id"], dr["Event Name"], dr["date_display"], 
+                            dr["Type"], registered, attended, rateStr);
 
                         // Color rows by performance
                         if (rate >= 90)
@@ -472,10 +472,11 @@ namespace BarangayCogonEventManagementSystem
                         }
                     }
 
-                    double overallRate = totalRegistered > 0 ? ((double)totalPresent / totalRegistered) * 100 : 0;
+                    // Calculate overall rate based on Attended / Registered
+                    double overallRate = totalRegistered > 0 ? ((double)totalAttended / totalRegistered) * 100 : 0;
                     UpdateStatCards(totalEvents, totalRegistered, overallRate, totalPending);
 
-                    // Beautiful formatted summary with icons - UPDATED
+                    // Beautiful formatted summary with icons - UPDATED WITH SPEAKERS
                     lblSummaryData.Text = 
                         $"📅 EVENTS\n" +
                         $"  • Total: {totalEvents}\n" +
@@ -484,16 +485,19 @@ namespace BarangayCogonEventManagementSystem
                         $"👥 PARTICIPANTS\n" +
                         $"  • Attendees: {totalAttendees}\n" +
                         $"  • Volunteers: {totalVolunteers}\n" +
+                        $"  • Speakers: {totalSpeakers}\n" +
                         $"  • Total Registered: {totalRegistered}\n\n" +
                         $"✓ ATTENDANCE\n" +
-                        $"  • Fully Attended: {totalPresent}\n" +
-                        $"  • Checked-in: {totalCheckedIn}\n" +
+                        $"  • Attended: {totalAttended}\n" +
+                        $"  • Didn't Attend: {totalDidntAttend}\n" +
                         $"  • Overall Rate: {overallRate:F1}%\n\n" +
                         $"⏳ PENDING\n" +
                         $"  • Awaiting Approval: {totalPending}\n\n" +
                         $"📈 AVERAGES\n" +
                         $"  • Attendees/Event: {(totalEvents > 0 ? (double)totalAttendees / totalEvents : 0):F1}\n" +
-                        $"  • Volunteers/Event: {(totalEvents > 0 ? (double)totalVolunteers / totalEvents : 0):F1}";
+                        $"  • Volunteers/Event: {(totalEvents > 0 ? (double)totalVolunteers / totalEvents : 0):F1}\n" +
+                        $"  • Speakers/Event: {(totalEvents > 0 ? (double)totalSpeakers / totalEvents : 0):F1}\n" +
+                        $"  • Registered/Event: {(totalEvents > 0 ? (double)totalRegistered / totalEvents : 0):F1}";
                 }
 
                 dgvReports.ClearSelection();
@@ -648,11 +652,11 @@ namespace BarangayCogonEventManagementSystem
             
             // Extract statistics from summary text
             int totalEvents = 0, completed = 0, upcoming = 0;
-            int totalAttendees = 0, totalVolunteers = 0, totalRegistered = 0;
-            int totalPresent = 0, totalCheckedIn = 0;
+            int totalAttendees = 0, totalVolunteers = 0, totalSpeakers = 0, totalRegistered = 0;
+            int totalFullyAttended = 0, totalDidntAttend = 0;
             double overallRate = 0;
             int totalPending = 0;
-            double avgAttendeesPerEvent = 0, avgVolunteersPerEvent = 0;
+            double avgAttendeesPerEvent = 0, avgVolunteersPerEvent = 0, avgSpeakersPerEvent = 0;
 
             // Parse the summary text
             string[] lines = summaryText.Split('\n');
@@ -663,13 +667,23 @@ namespace BarangayCogonEventManagementSystem
                 else if (line.Contains("Upcoming:")) upcoming = ExtractNumber(line);
                 else if (line.Contains("Attendees:") && !line.Contains("/")) totalAttendees = ExtractNumber(line);
                 else if (line.Contains("Volunteers:") && !line.Contains("/")) totalVolunteers = ExtractNumber(line);
+                else if (line.Contains("Speakers:") && !line.Contains("/")) totalSpeakers = ExtractNumber(line);
                 else if (line.Contains("Total Registered:")) totalRegistered = ExtractNumber(line);
-                else if (line.Contains("Fully Attended:")) totalPresent = ExtractNumber(line);
-                else if (line.Contains("Checked-in:")) totalCheckedIn = ExtractNumber(line);
+                else if (line.Contains("Attended:")) totalFullyAttended = ExtractNumber(line);
+                else if (line.Contains("Didn't Attend:")) totalDidntAttend = ExtractNumber(line);
                 else if (line.Contains("Overall Rate:")) overallRate = ExtractDouble(line);
                 else if (line.Contains("Awaiting Approval:")) totalPending = ExtractNumber(line);
                 else if (line.Contains("Attendees/Event:")) avgAttendeesPerEvent = ExtractDouble(line);
                 else if (line.Contains("Volunteers/Event:")) avgVolunteersPerEvent = ExtractDouble(line);
+                else if (line.Contains("Speakers/Event:")) avgSpeakersPerEvent = ExtractDouble(line);
+            }
+
+            double avgRegisteredPerEvent = 0;
+            
+            // Extract Registered/Event from summary
+            foreach (string line in lines)
+            {
+                if (line.Contains("Registered/Event:")) avgRegisteredPerEvent = ExtractDouble(line);
             }
 
             // Create 2x2 grid for summary statistics
@@ -708,6 +722,7 @@ namespace BarangayCogonEventManagementSystem
             participantsCell.AddElement(participantsHeading);
             participantsCell.AddElement(new Paragraph($"  • Attendees: {totalAttendees}", summaryFont));
             participantsCell.AddElement(new Paragraph($"  • Volunteers: {totalVolunteers}", summaryFont));
+            participantsCell.AddElement(new Paragraph($"  • Speakers: {totalSpeakers}", summaryFont));
             participantsCell.AddElement(new Paragraph($"  • Total Registered: {totalRegistered}", summaryFont));
             summaryGrid.AddCell(participantsCell);
 
@@ -721,8 +736,8 @@ namespace BarangayCogonEventManagementSystem
             Paragraph attendanceHeading = new Paragraph("ATTENDANCE", summaryHeadingFont);
             attendanceHeading.SpacingAfter = 8;
             attendanceCell.AddElement(attendanceHeading);
-            attendanceCell.AddElement(new Paragraph($"  • Fully Attended: {totalPresent}", summaryFont));
-            attendanceCell.AddElement(new Paragraph($"  • Checked-in: {totalCheckedIn}", summaryFont));
+            attendanceCell.AddElement(new Paragraph($"  • Attended: {totalFullyAttended}", summaryFont));
+            attendanceCell.AddElement(new Paragraph($"  • Didn't Attend: {totalDidntAttend}", summaryFont));
             attendanceCell.AddElement(new Paragraph($"  • Overall Rate: {overallRate:F1}%", summaryFont));
             summaryGrid.AddCell(attendanceCell);
 
@@ -762,6 +777,8 @@ namespace BarangayCogonEventManagementSystem
             averagesCell.AddElement(averagesHeading);
             averagesCell.AddElement(new Paragraph($"  • Attendees/Event: {avgAttendeesPerEvent:F1}", summaryFont));
             averagesCell.AddElement(new Paragraph($"  • Volunteers/Event: {avgVolunteersPerEvent:F1}", summaryFont));
+            averagesCell.AddElement(new Paragraph($"  • Speakers/Event: {avgSpeakersPerEvent:F1}", summaryFont));
+            averagesCell.AddElement(new Paragraph($"  • Registered/Event: {avgRegisteredPerEvent:F1}", summaryFont));
             averagesTable.AddCell(averagesCell);
 
             doc.Add(averagesTable);
@@ -803,52 +820,24 @@ namespace BarangayCogonEventManagementSystem
             return 0;
         }
 
-        private void InitializeFilters()
+        private void InitializeFilters(Panel parentContainer)
         {
-            // Search box
-            txtSearch = new TextBox
-            {
-                Location = new Point(20, 720),
-                Size = new Size(280, 30),
-                Font = new System.Drawing.Font("Segoe UI", 10F),
-                BackColor = Color.FromArgb(37, 42, 64),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            txtSearch.Text = "🔍 Search events...";
-            txtSearch.ForeColor = Color.Gray;
-            
-            txtSearch.Enter += (s, ev) => {
-                if (txtSearch.Text == "🔍 Search events...")
-                {
-                    txtSearch.Text = "";
-                    txtSearch.ForeColor = Color.White;
-                }
-            };
-            
-            txtSearch.Leave += (s, ev) => {
-                if (string.IsNullOrWhiteSpace(txtSearch.Text))
-                {
-                    txtSearch.Text = "🔍 Search events...";
-                    txtSearch.ForeColor = Color.Gray;
-                }
-            };
-            txtSearch.TextChanged += (s, ev) => LoadReports();
-
-            // Type filter
+            // Type filter label
             Label lblType = new Label
             {
-                Text = "Type:",
-                Location = new Point(320, 725),
-                Size = new Size(50, 20),
+                Text = "Filter by Type:",
+                Location = new Point(0, 125),
+                Size = new Size(100, 25),
                 ForeColor = Color.White,
-                Font = new System.Drawing.Font("Segoe UI", 10F)
+                Font = new System.Drawing.Font("Segoe UI", 10F),
+                TextAlign = ContentAlignment.MiddleLeft
             };
 
+            // Type filter dropdown
             cboTypeFilter = new ComboBox
             {
-                Location = new Point(375, 720),
-                Size = new Size(200, 30),
+                Location = new Point(105, 120),
+                Size = new Size(250, 30),
                 Font = new System.Drawing.Font("Segoe UI", 10F),
                 BackColor = Color.FromArgb(37, 42, 64),
                 ForeColor = Color.White,
@@ -859,10 +848,8 @@ namespace BarangayCogonEventManagementSystem
             cboTypeFilter.SelectedIndex = 0;
             cboTypeFilter.SelectedIndexChanged += (s, ev) => LoadReports();
 
-            this.Controls.Add(txtSearch);
-            this.Controls.Add(lblType);
-            this.Controls.Add(cboTypeFilter);
-            txtSearch.BringToFront();
+            parentContainer.Controls.Add(lblType);
+            parentContainer.Controls.Add(cboTypeFilter);
             lblType.BringToFront();
             cboTypeFilter.BringToFront();
         }
