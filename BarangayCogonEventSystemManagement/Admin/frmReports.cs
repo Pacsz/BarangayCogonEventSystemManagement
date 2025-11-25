@@ -53,14 +53,17 @@ namespace BarangayCogonEventManagementSystem
                 BackColor = Color.Transparent
             };
 
-            // === 4 STAT CARDS AT TOP - WITH PROPER GAPS ===
-            pnlTotalEventsCard = CreateStatCard(0, 0, Color.FromArgb(0, 126, 249), 
+            // Initialize the filter at the top (BEFORE the cards)
+            InitializeFilters(pnlLeftContainer);
+
+            // === 4 STAT CARDS - MOVED DOWN TO Y=45 ===
+            pnlTotalEventsCard = CreateStatCard(0, 45, Color.FromArgb(0, 126, 249), 
                 IconChar.CalendarAlt, "Total Events", "0");
-            pnlTotalRegisteredCard = CreateStatCard(205, 0, Color.FromArgb(76, 175, 80), 
+            pnlTotalRegisteredCard = CreateStatCard(205, 45, Color.FromArgb(76, 175, 80), 
                 IconChar.Users, "Registered", "0");
-            pnlAttendanceRateCard = CreateStatCard(410, 0, Color.FromArgb(255, 152, 0), 
+            pnlAttendanceRateCard = CreateStatCard(410, 45, Color.FromArgb(255, 152, 0), 
                 IconChar.ChartLine, "Attendance", "0%");
-            pnlPendingCard = CreateStatCard(615, 0, Color.FromArgb(244, 67, 54), 
+            pnlPendingCard = CreateStatCard(615, 45, Color.FromArgb(244, 67, 54), 
                 IconChar.Clock, "Pending", "0");
 
             pnlLeftContainer.Controls.Add(pnlTotalEventsCard);
@@ -68,18 +71,15 @@ namespace BarangayCogonEventManagementSystem
             pnlLeftContainer.Controls.Add(pnlAttendanceRateCard);
             pnlLeftContainer.Controls.Add(pnlPendingCard);
 
-            // Initialize the filter at the top (before the table)
-            InitializeFilters(pnlLeftContainer);
-
-            // Table - adjusted position to be below the filter
+            // Table - adjusted position to be below the cards (45 + 110 + 15 spacing = 170)
             if (dgvReports != null)
             {
                 dgvReports.Parent = pnlLeftContainer;
-                dgvReports.Location = new Point(0, 165);
-                dgvReports.Size = new Size(800, 455);
+                dgvReports.Location = new Point(0, 170);
+                dgvReports.Size = new Size(800, 450);
             }
 
-            // Export PDF button - centered without refresh button
+            // Export PDF button - adjusted position
             if (btnExportPDF != null)
             {
                 btnExportPDF.Parent = pnlLeftContainer;
@@ -826,7 +826,7 @@ namespace BarangayCogonEventManagementSystem
             Label lblType = new Label
             {
                 Text = "Filter by Type:",
-                Location = new Point(0, 125),
+                Location = new Point(0, 5),
                 Size = new Size(100, 25),
                 ForeColor = Color.White,
                 Font = new System.Drawing.Font("Segoe UI", 10F),
@@ -836,7 +836,7 @@ namespace BarangayCogonEventManagementSystem
             // Type filter dropdown
             cboTypeFilter = new ComboBox
             {
-                Location = new Point(105, 120),
+                Location = new Point(105, 0),
                 Size = new Size(250, 30),
                 Font = new System.Drawing.Font("Segoe UI", 10F),
                 BackColor = Color.FromArgb(37, 42, 64),

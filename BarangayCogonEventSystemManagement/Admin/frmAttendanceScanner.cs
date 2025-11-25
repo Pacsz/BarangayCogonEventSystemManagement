@@ -390,9 +390,9 @@ namespace BarangayCogonEventManagementSystem
                 DateTime eventEndDateTime = Convert.ToDateTime(row["end_datetime"]);
                 DateTime currentTime = DateTime.Now;
                 
-                // Define 2-hour grace period after event ends
+                // Define 2-hour grace period after event ends (for check-outs only)
                 const int GRACE_PERIOD_HOURS = 2;
-                DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                DateTime checkoutDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
 
                 // Validation 2: Check if registration is approved
                 if (status != "Approved" && status != "Checked-in")
@@ -409,22 +409,7 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
-                // Validation 3: Check if grace period has expired (event ended + 2 hours)
-                if (currentTime > attendanceDeadline)
-                {
-                    lblStatus.Text = "❌ Status: Attendance period has closed.";
-                    lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
-                    MessageBox.Show($"The attendance recording period for this event has closed.\n\n" +
-                        $"Event: {eventName}\n" +
-                        $"End Date: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
-                        $"Grace Period Ended: {attendanceDeadline.ToString("MMM dd, yyyy hh:mm tt")}\n" +
-                        $"Current Time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
-                        $"Attendance can only be recorded during the event or within {GRACE_PERIOD_HOURS} hours after it ends.",
-                        "Attendance Period Closed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Validation 4: Check if event has started (for check-in)
+                // Validation 3: Check if event has started (required for both check-in and check-out)
                 if (currentTime < eventStartDateTime)
                 {
                     lblStatus.Text = "⏰ Status: Event hasn't started yet.";
@@ -473,7 +458,7 @@ namespace BarangayCogonEventManagementSystem
 
                 if (checkDt.Rows.Count > 0)
                 {
-                    // Attendance record exists
+                    // Attendance record exists - handle check-out logic
                     DataRow attendanceRow = checkDt.Rows[0];
                     DateTime checkInTime = Convert.ToDateTime(attendanceRow["check_in_time"]);
                     object checkOutValue = attendanceRow["check_out_time"];
@@ -489,15 +474,30 @@ namespace BarangayCogonEventManagementSystem
                             $"Event: {eventName}\n" +
                             $"Check-in: {checkInTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
                             $"Check-out: {checkOutTime.ToString("MMM dd, yyyy hh:mm tt")}",
+
                             "Already Recorded", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
                     else
                     {
                         // Only check-in recorded, offer check-out
-                        // Check if we're within the allowed period (event has ended or within grace period)
+                        // Validation: Check-out grace period (event ended + 2 hours)
+                        if (currentTime > checkoutDeadline)
+                        {
+                            lblStatus.Text = "❌ Status: Check-out period has closed.";
+                            lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                            MessageBox.Show($"The check-out period for this event has closed.\n\n" +
+                                $"Event: {eventName}\n" +
+                                $"End Date: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                                $"Grace Period Ended: {checkoutDeadline.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                                $"Current Time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                                $"Check-out can only be recorded during the event or within {GRACE_PERIOD_HOURS} hours after it ends.",
+                                "Check-out Period Closed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                        
+                        // Check if event is still ongoing
                         bool isEventEnded = currentTime >= eventEndDateTime;
-                        bool isWithinGracePeriod = currentTime <= attendanceDeadline;
                         
                         if (!isEventEnded)
                         {
@@ -537,28 +537,24 @@ namespace BarangayCogonEventManagementSystem
                             $"Check-in: {checkInTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n";
                         
                         // Add grace period info if event has ended
-                        if (isEventEnded)
+                        TimeSpan timeRemaining = checkoutDeadline - currentTime;
+                        string gracePeriodInfo = "";
+                        
+                        if (timeRemaining.TotalHours >= 1)
                         {
-                            TimeSpan timeRemaining = attendanceDeadline - currentTime;
-                            string gracePeriodInfo = "";
-                            
-                            if (timeRemaining.TotalHours >= 1)
-                            {
-                                int hours = (int)timeRemaining.TotalHours;
-                                int minutes = timeRemaining.Minutes;
-                                gracePeriodInfo = $"{hours}h {minutes}m";
-                            }
-                            else
-                            {
-                                int minutes = (int)timeRemaining.TotalMinutes;
-                                gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
-                            }
-                            
-                            checkoutMessage += $"Event ended: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
-                                             $"Grace period remaining: {gracePeriodInfo}\n\n";
+                            int hours = (int)timeRemaining.TotalHours;
+                            int minutes = timeRemaining.Minutes;
+                            gracePeriodInfo = $"{hours}h {minutes}m";
+                        }
+                        else
+                        {
+                            int minutes = (int)timeRemaining.TotalMinutes;
+                            gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
                         }
                         
-                        checkoutMessage += "Would you like to record CHECK-OUT now?";
+                        checkoutMessage += $"Event ended: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                                         $"Grace period remaining: {gracePeriodInfo}\n\n" +
+                                         $"Would you like to record CHECK-OUT now?";
                         
                         DialogResult result = MessageBox.Show(checkoutMessage,
                             "Record Check-Out?", 
@@ -579,46 +575,22 @@ namespace BarangayCogonEventManagementSystem
                 }
 
                 // No attendance record exists, record check-in
-                // Show grace period info if event has already ended but still within grace period
-                bool showGracePeriodWarning = currentTime > eventEndDateTime;
-                
-                if (showGracePeriodWarning)
+                // Validation 4: Check-in is only allowed during the event (not after event ends)
+                if (currentTime > eventEndDateTime)
                 {
-                    TimeSpan timeRemaining = attendanceDeadline - currentTime;
-                    string gracePeriodInfo = "";
-                    
-                    if (timeRemaining.TotalHours >= 1)
-                    {
-                        int hours = (int)timeRemaining.TotalHours;
-                        int minutes = timeRemaining.Minutes;
-                        gracePeriodInfo = $"{hours}h {minutes}m";
-                    }
-                    else
-                    {
-                        int minutes = (int)timeRemaining.TotalMinutes;
-                        gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
-                    }
-                    
-                    DialogResult gracePeriodConfirm = MessageBox.Show(
-                        $"⚠️ LATE CHECK-IN WARNING\n\n" +
+                    lblStatus.Text = "❌ Status: Event has ended. Check-in not allowed.";
+                    lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+                    MessageBox.Show($"This event has already ended.\n\n" +
                         $"Event: {eventName}\n" +
-                        $"Event ended: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
-                        $"Current time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
-                        $"This event has already ended, but you are within the {GRACE_PERIOD_HOURS}-hour grace period.\n" +
-                        $"Remaining time: {gracePeriodInfo}\n\n" +
-                        $"Do you want to record a late check-in for {userName}?",
-                        "Late Check-In Confirmation",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning);
-                    
-                    if (gracePeriodConfirm == DialogResult.No)
-                    {
-                        lblStatus.Text = "ℹ️ Status: Late check-in cancelled.";
-                        lblStatus.ForeColor = Color.White;
-                        return;
-                    }
+                        $"End Date: {eventEndDateTime.ToString("MMM dd, yyyy hh:mm tt")}\n" +
+                        $"Current Time: {currentTime.ToString("MMM dd, yyyy hh:mm tt")}\n\n" +
+                        $"Check-in is only allowed during the event.\n" +
+                        $"You cannot check in after the event has ended.",
+                        "Event Has Ended", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
                 
+                // Event is currently ongoing, proceed with check-in
                 string insert = "INSERT INTO attendance (registration_id, check_in_time) VALUES (@id, NOW())";
                 MySqlParameter[] insertParam = { new MySqlParameter("@id", regId) };
                 int rowsAffected = DatabaseHelper.ExecuteNonQuery(insert, insertParam);
@@ -631,18 +603,11 @@ namespace BarangayCogonEventManagementSystem
                     lblStatus.Text = "✅ Status: Check-in recorded successfully!";
                     lblStatus.ForeColor = Color.FromArgb(76, 175, 80); // Green color
                     
-                    string successMessage = $"✅ CHECK-IN SUCCESSFUL!\n\n" +
+                    MessageBox.Show($"✅ CHECK-IN SUCCESSFUL!\n\n" +
                         $"Name: {userName}\n" +
                         $"Email: {userEmail}\n" +
                         $"Event: {eventName}\n" +
-                        $"Time: {DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")}";
-                    
-                    if (showGracePeriodWarning)
-                    {
-                        successMessage += "\n\n⚠️ Note: This is a late check-in (event has ended).";
-                    }
-                    
-                    MessageBox.Show(successMessage,
+                        $"Time: {DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")}",
                         "Attendance Recorded", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
@@ -706,46 +671,40 @@ namespace BarangayCogonEventManagementSystem
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            StopCamera();
-            lblStatus.Text = "Status: Scanner stopped.";
-            lblStatus.ForeColor = Color.White;
-        }
+            // Stop the video feed and scanning
+            if (videoSource != null && videoSource.IsRunning)
+            {
+                videoSource.SignalToStop();
+                videoSource.WaitForStop();
+            }
 
-        private void StopCamera()
-        {
-            try
+            if (scanTimer != null)
             {
-                if (scanTimer != null)
-                {
-                    scanTimer.Stop();
-                    scanTimer.Dispose();
-                    scanTimer = null;
-                }
-                
-                if (videoSource != null && videoSource.IsRunning)
-                {
-                    videoSource.SignalToStop();
-                    videoSource.WaitForStop();
-                    videoSource = null;
-                }
-                
-                if (currentFrame != null)
-                {
-                    currentFrame.Dispose();
-                    currentFrame = null;
-                }
-                
-                System.Diagnostics.Debug.WriteLine("Scanner stopped");
+                scanTimer.Stop();
+                scanTimer.Dispose();
+                scanTimer = null;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error stopping camera: {ex.Message}");
-            }
+
+            lblStatus.Text = "Status: Scanner stopped.";
+            lblStatus.ForeColor = Color.FromArgb(211, 47, 47); // Red color
+            
+            System.Diagnostics.Debug.WriteLine("Scanner stopped by user");
         }
 
         private void frmAttendanceScanner_FormClosing(object sender, FormClosingEventArgs e)
         {
-            StopCamera();
+            // Ensure video source is stopped when closing the form
+            if (videoSource != null && videoSource.IsRunning)
+            {
+                videoSource.SignalToStop();
+                videoSource.WaitForStop();
+            }
+
+            if (scanTimer != null)
+            {
+                scanTimer.Stop();
+                scanTimer.Dispose();
+            }
         }
     }
 }

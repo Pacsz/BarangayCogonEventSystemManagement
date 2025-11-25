@@ -670,43 +670,68 @@ namespace BarangayCogonEventManagementSystem
                         lblNotice.ForeColor = Color.FromArgb(76, 175, 80); // Green color
                         lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                     }
-                    else if (isGracePeriodExpired)
+                    else if (registrationStatus == "Checked-in")
                     {
-                        // Grace period has expired - QR code is no longer valid
-                        lblNotice.Text = "❌ Attendance period has closed.\n" +
-                                       "QR code is no longer valid.\n" +
-                                       $"Grace period ended {GRACE_PERIOD_HOURS} hours after event.";
-                        lblNotice.ForeColor = Color.FromArgb(211, 47, 47); // Red color
-                        lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-                    }
-                    else if (isEventEnded)
-                    {
-                        // Event has ended but still within grace period
-                        DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
-                        TimeSpan timeRemaining = attendanceDeadline - currentTime;
-                        string gracePeriodInfo = "";
-                        
-                        if (timeRemaining.TotalHours >= 1)
+                        // User has checked in but not checked out yet
+                        if (!isEventEnded)
                         {
-                            int hours = (int)timeRemaining.TotalHours;
-                            int minutes = timeRemaining.Minutes;
-                            gracePeriodInfo = $"{hours}h {minutes}m";
+                            // Event is still ongoing
+                            lblNotice.Text = "✅ User has checked in successfully\n" +
+                                           "Event is still in progress\n" +
+                                           "Check-out will be available after event ends";
+                            lblNotice.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                            lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                        }
+                        else if (!isGracePeriodExpired)
+                        {
+                            // Event has ended but within check-out grace period
+                            DateTime checkoutDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                            TimeSpan timeRemaining = checkoutDeadline - DateTime.Now;
+                            string gracePeriodInfo = "";
+                            
+                            if (timeRemaining.TotalHours >= 1)
+                            {
+                                int hours = (int)timeRemaining.TotalHours;
+                                int minutes = timeRemaining.Minutes;
+                                gracePeriodInfo = $"{hours}h {minutes}m";
+                            }
+                            else
+                            {
+                                int minutes = (int)timeRemaining.TotalMinutes;
+                                gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                            }
+                            
+                            lblNotice.Text = $"⏰ User checked in - Awaiting check-out\n" +
+                                           $"Check-out grace period: {gracePeriodInfo} remaining\n" +
+                                           $"User can still check out to complete attendance";
+                            lblNotice.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+                            lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                         }
                         else
                         {
-                            int minutes = (int)timeRemaining.TotalMinutes;
-                            gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                            // Check-out grace period has expired
+                            lblNotice.Text = "⚠️ Check-out period closed\n" +
+                                           "User checked in but didn't check out in time\n" +
+                                           $"Grace period expired {GRACE_PERIOD_HOURS} hours after event";
+                            lblNotice.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
+                            lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                         }
-                        
-                        lblNotice.Text = $"⚠️ Event has ended - Grace period active\n" +
-                                       $"QR code valid for {gracePeriodInfo} more\n" +
-                                       $"Attendance can still be recorded!";
-                        lblNotice.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+                    }
+                    else if (isEventEnded)
+                    {
+                        // Event has ended and user hasn't checked in
+                        lblNotice.Text = "❌ Event has ended - Check-in closed\n" +
+                                       "QR code no longer valid for check-in\n" +
+                                       "Check-in only allowed during event period";
+                        lblNotice.ForeColor = Color.FromArgb(211, 47, 47); // Red color
                         lblNotice.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                     }
                     else
                     {
-                        lblNotice.Text = "This QR code is for attendance verification\nat the event.";
+                        // Event is ongoing or upcoming - QR is valid
+                        lblNotice.Text = "This QR code is for attendance verification\n" +
+                                       "at the event.\n" +
+                                       "Check-in available during event period";
                     }
 
                     // Close button with rounded corners

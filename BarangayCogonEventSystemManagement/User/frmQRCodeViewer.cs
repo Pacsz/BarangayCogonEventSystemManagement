@@ -113,46 +113,68 @@ namespace BarangayCogonEventManagementSystem
                 lblInfo.ForeColor = Color.FromArgb(76, 175, 80); // Green color
                 lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             }
-            else if (isGracePeriodExpired)
+            else if (registrationStatus == "Checked-in")
             {
-                // Grace period has expired - QR code is no longer valid
-                lblInfo.Text = "⏱️ Sorry, the check-in period has ended\n" +
-                              "This QR code is no longer active\n" +
-                              $"(Check-in closed {GRACE_PERIOD_HOURS} hours after event ended)";
-                lblInfo.ForeColor = Color.FromArgb(211, 47, 47); // Red color
-                lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            }
-            else if (isEventEnded)
-            {
-                // Event has ended but still within grace period
-                DateTime attendanceDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
-                TimeSpan timeRemaining = attendanceDeadline - DateTime.Now;
-                string gracePeriodInfo = "";
-                
-                if (timeRemaining.TotalHours >= 1)
+                // User has checked in but not checked out yet
+                if (!isEventEnded)
                 {
-                    int hours = (int)timeRemaining.TotalHours;
-                    int minutes = timeRemaining.Minutes;
-                    gracePeriodInfo = $"{hours}h {minutes}m";
+                    // Event is still ongoing
+                    lblInfo.Text = "✅ You're checked in! Enjoy the event\n" +
+                                  "Don't forget to check out when the event ends\n" +
+                                  "Check-out will be available after the event concludes";
+                    lblInfo.ForeColor = Color.FromArgb(76, 175, 80); // Green color
+                    lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                }
+                else if (!isGracePeriodExpired)
+                {
+                    // Event has ended but within check-out grace period
+                    DateTime checkoutDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
+                    TimeSpan timeRemaining = checkoutDeadline - DateTime.Now;
+                    string gracePeriodInfo = "";
+                    
+                    if (timeRemaining.TotalHours >= 1)
+                    {
+                        int hours = (int)timeRemaining.TotalHours;
+                        int minutes = timeRemaining.Minutes;
+                        gracePeriodInfo = $"{hours}h {minutes}m";
+                    }
+                    else
+                    {
+                        int minutes = (int)timeRemaining.TotalMinutes;
+                        gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                    }
+                    
+                    lblInfo.Text = $"⏰ Reminder: Please check out now!\n" +
+                                  $"You have {gracePeriodInfo} remaining to check out\n" +
+                                  $"Scan this QR at the registration desk to complete attendance";
+                    lblInfo.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+                    lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                 }
                 else
                 {
-                    int minutes = (int)timeRemaining.TotalMinutes;
-                    gracePeriodInfo = $"{minutes} minute{(minutes > 1 ? "s" : "")}";
+                    // Check-out grace period has expired
+                    lblInfo.Text = "⚠️ Check-out period has closed\n" +
+                                  "You checked in but didn't check out in time\n" +
+                                  $"(Check-out closed {GRACE_PERIOD_HOURS} hours after event ended)";
+                    lblInfo.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
+                    lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
                 }
-                
-                lblInfo.Text = $"⏰ Hurry! Event has ended but you can still check in\n" +
-                              $"Your QR code is valid for {gracePeriodInfo} more\n" +
-                              $"Please scan at the registration desk now!";
-                lblInfo.ForeColor = Color.FromArgb(255, 193, 7); // Yellow/amber color
+            }
+            else if (isEventEnded)
+            {
+                // Event has ended and user hasn't checked in
+                lblInfo.Text = "❌ Event has ended - Check-in closed\n" +
+                              "This QR code is no longer valid for check-in\n" +
+                              "Check-in is only allowed during the event";
+                lblInfo.ForeColor = Color.FromArgb(211, 47, 47); // Red color
                 lblInfo.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             }
             else
             {
-                // Event is ongoing or hasn't started yet
+                // Event is ongoing or hasn't started yet - QR is valid for check-in
                 lblInfo.Text = "📱 Show this QR code when you arrive at the event\n" +
                               "Present it to the registration desk for check-in\n" +
-                              $"(You can check in anytime during the event + {GRACE_PERIOD_HOURS} hours after)";
+                              "Check-in is available during the event period";
             }
             this.Controls.Add(lblInfo);
 
