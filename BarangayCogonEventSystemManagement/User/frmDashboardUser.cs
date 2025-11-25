@@ -19,6 +19,7 @@ namespace BarangayCogonEventManagementSystem
         private readonly Color defaultColor = Color.Transparent;
         private Form currentChildForm;
         private Control[] dashboardControls;
+        private ContextMenuStrip contextMenuActions;
 
         public frmDashboardUser(int userId, string userName)
         {
@@ -29,6 +30,56 @@ namespace BarangayCogonEventManagementSystem
             {
                 pnlMyEventsCard, pnlPendingCard, pnlApprovedCard, pnlUpcomingEvents
             };
+            InitializeContextMenu();
+        }
+
+        private void InitializeContextMenu()
+        {
+            // Create and style context menu for actions
+            contextMenuActions = new ContextMenuStrip();
+            contextMenuActions.BackColor = Color.FromArgb(37, 42, 64);
+            contextMenuActions.ForeColor = Color.White;
+            contextMenuActions.ShowImageMargin = false;
+            contextMenuActions.Renderer = new ToolStripProfessionalRenderer(new CustomContextMenuColorTable());
+        }
+
+        // Custom color table for context menu styling
+        private class CustomContextMenuColorTable : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemBorder
+            {
+                get { return Color.FromArgb(37, 42, 64); }
+            }
+
+            public override Color MenuBorder
+            {
+                get { return Color.FromArgb(60, 65, 90); }
+            }
+
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientBegin
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
+
+            public override Color MenuItemPressedGradientEnd
+            {
+                get { return Color.FromArgb(46, 51, 73); }
+            }
         }
 
         private void frmDashboardResident_Load(object sender, EventArgs e)
@@ -165,6 +216,14 @@ namespace BarangayCogonEventManagementSystem
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_end_datetime",
+                HeaderText = "Event End",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
@@ -245,6 +304,7 @@ namespace BarangayCogonEventManagementSystem
                                         CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                         e.venue AS event_venue,
                                         e.type AS event_type,
+                                        e.end_datetime AS event_end_datetime,
                                         r.id AS registration_id,
                                         r.status AS registration_status,
                                         CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END AS is_registered
@@ -274,6 +334,7 @@ namespace BarangayCogonEventManagementSystem
                         "", // event_time
                         "", // event_venue
                         "", // event_type
+                        DBNull.Value, // event_end_datetime
                         ""  // ActionColumn
                     );
 
@@ -298,6 +359,7 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_time"],
                             dr["event_venue"],
                             dr["event_type"],
+                            dr["event_end_datetime"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }
@@ -467,12 +529,12 @@ namespace BarangayCogonEventManagementSystem
                 
                 string registrationStatus = row.Cells["registration_status"].Value?.ToString();
                 
-                // Show N/A if user is registered but status is NOT Pending
-                bool showNA = isRegistered && registrationStatus != "Pending";
+                // Show N/A only for Rejected status (matching frmMyEvents)
+                bool showNA = isRegistered && registrationStatus == "Rejected";
 
                 if (showNA)
                 {
-                    // Draw "N/A" text for non-actionable statuses (Approved, Rejected, Attended, etc.)
+                    // Draw "N/A" text for rejected registrations
                     using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
                     using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
                     using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
@@ -482,8 +544,8 @@ namespace BarangayCogonEventManagementSystem
                 }
                 else
                 {
-                    // Draw action button for non-registered events or Pending registrations
-                    int buttonWidth = 90;
+                    // Draw action button for non-registered events or non-rejected registrations
+                    int buttonWidth = isRegistered ? 70 : 90;
                     int buttonHeight = 30;
                     int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
                     int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
@@ -492,14 +554,14 @@ namespace BarangayCogonEventManagementSystem
 
                     using (GraphicsPath path = GetRoundPath(buttonRect, radius))
                     using (SolidBrush buttonBrush = new SolidBrush(isRegistered ? 
-                        Color.FromArgb(244, 67, 54) : Color.FromArgb(0, 126, 249)))
+                        Color.FromArgb(0, 126, 249) : Color.FromArgb(0, 126, 249)))
                     using (SolidBrush textBrush = new SolidBrush(Color.White))
-                    using (Font btnFont = new Font("Segoe UI", 9F, FontStyle.Bold))
+                    using (Font btnFont = new Font("Segoe UI", isRegistered ? 12F : 9F, FontStyle.Bold))
                     using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
                     {
                         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                         e.Graphics.FillPath(buttonBrush, path);
-                        e.Graphics.DrawString(isRegistered ? "Unregister" : "Register", btnFont, textBrush, buttonRect, sf);
+                        e.Graphics.DrawString(isRegistered ? "..." : "Register", btnFont, textBrush, buttonRect, sf);
                     }
                 }
 
@@ -529,26 +591,95 @@ namespace BarangayCogonEventManagementSystem
                 
                 string registrationStatus = row.Cells["registration_status"].Value?.ToString();
                 
-                // Don't allow action if user is registered but status is NOT Pending
-                bool showNA = isRegistered && registrationStatus != "Pending";
+                // Don't allow action if user is registered and status is Rejected
+                bool showNA = isRegistered && registrationStatus == "Rejected";
                 
                 if (showNA)
                 {
-                    // No action for non-pending registrations
+                    // No action for rejected registrations
                     return;
                 }
 
                 if (isRegistered)
                 {
-                    // Unregister (only for Pending status)
+                    // Show context menu with options based on status
                     int registrationId = Convert.ToInt32(row.Cells["registration_id"].Value);
-                    UnregisterFromEvent(registrationId, eventName);
+                    
+                    // Clear existing menu items
+                    contextMenuActions.Items.Clear();
+
+                    // Add menu items based on status
+                    if (registrationStatus == "Pending")
+                    {
+                        // Show Unregister for pending registrations
+                        ToolStripMenuItem unregisterItem = new ToolStripMenuItem("✗ Unregister");
+                        unregisterItem.Font = new Font("Segoe UI", 10F);
+                        unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName);
+                        contextMenuActions.Items.Add(unregisterItem);
+                    }
+                    else
+                    {
+                        // Show View QR for approved/checked-in/attended registrations
+                        ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                        viewQRItem.Font = new Font("Segoe UI", 10F);
+                        viewQRItem.Click += (s, ev) => ViewQRCode(eventName, registrationId);
+                        contextMenuActions.Items.Add(viewQRItem);
+                    }
+
+                    // Get cell rectangle
+                    Rectangle rect = dgvUpcomingEvents.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
+
+                    // Calculate the button position (centered in cell, same as in CellPainting)
+                    int buttonWidth = 70;
+                    int buttonHeight = 30;
+                    int buttonX = rect.Left + (rect.Width - buttonWidth) / 2;
+                    int buttonY = rect.Top + (rect.Height - buttonHeight) / 2;
+
+                    // Position context menu just below and to the right of the button
+                    Point pt = new Point(buttonX + buttonWidth + 5, buttonY);
+
+                    // Show the context menu right next to the action button
+                    contextMenuActions.Show(dgvUpcomingEvents, pt);
                 }
                 else
                 {
                     // Register
                     RegisterForEvent(eventId, eventName, eventDate, eventVenue);
                 }
+            }
+        }
+
+        private void ViewQRCode(string eventName, int registrationId)
+        {
+            try
+            {
+                // Fetch QR code data, event end datetime, and registration status
+                string query = @"SELECT r.qr_code, r.status, e.end_datetime 
+                                FROM registrations r
+                                INNER JOIN events e ON r.event_id = e.id
+                                WHERE r.id=@id";
+                MySqlParameter[] parameters = { new MySqlParameter("@id", registrationId) };
+                DataTable dt = DatabaseHelper.ExecuteQuery(query, parameters);
+
+                if (dt.Rows.Count == 0 || dt.Rows[0]["qr_code"] == DBNull.Value)
+                {
+                    MessageBox.Show("No QR code available for this event.", "Info",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                string qrCodeData = dt.Rows[0]["qr_code"].ToString();
+                string registrationStatus = dt.Rows[0]["status"].ToString();
+                DateTime eventEndDateTime = Convert.ToDateTime(dt.Rows[0]["end_datetime"]);
+
+                // Use the modular QR viewer form with status
+                frmQRCodeViewer qrViewer = new frmQRCodeViewer(eventName, qrCodeData, eventEndDateTime, registrationStatus);
+                qrViewer.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading QR code: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
