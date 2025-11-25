@@ -13,6 +13,8 @@
         private System.Windows.Forms.TextBox txtEmail;
         private System.Windows.Forms.Label lblPassword;
         private System.Windows.Forms.TextBox txtPassword;
+        private System.Windows.Forms.Label lblConfirmPassword;
+        private System.Windows.Forms.TextBox txtConfirmPassword;
         private System.Windows.Forms.Label lblAddress;
         private System.Windows.Forms.TextBox txtAddress;
         private System.Windows.Forms.Label lblContact;
@@ -41,6 +43,8 @@
             this.txtEmail = new System.Windows.Forms.TextBox();
             this.lblPassword = new System.Windows.Forms.Label();
             this.txtPassword = new System.Windows.Forms.TextBox();
+            this.lblConfirmPassword = new System.Windows.Forms.Label();
+            this.txtConfirmPassword = new System.Windows.Forms.TextBox();
             this.lblAddress = new System.Windows.Forms.Label();
             this.txtAddress = new System.Windows.Forms.TextBox();
             this.lblContact = new System.Windows.Forms.Label();
@@ -162,14 +166,36 @@
             this.txtPassword.Size = new System.Drawing.Size(341, 32);
             this.txtPassword.TabIndex = 8;
             // 
+            // lblConfirmPassword
+            // 
+            this.lblConfirmPassword.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+            this.lblConfirmPassword.ForeColor = System.Drawing.Color.White;
+            this.lblConfirmPassword.Location = new System.Drawing.Point(719, 414);
+            this.lblConfirmPassword.Name = "lblConfirmPassword";
+            this.lblConfirmPassword.Size = new System.Drawing.Size(150, 23);
+            this.lblConfirmPassword.TabIndex = 9;
+            this.lblConfirmPassword.Text = "Confirm Password";
+            // 
+            // txtConfirmPassword
+            // 
+            this.txtConfirmPassword.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
+            this.txtConfirmPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtConfirmPassword.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.txtConfirmPassword.ForeColor = System.Drawing.Color.White;
+            this.txtConfirmPassword.Location = new System.Drawing.Point(723, 440);
+            this.txtConfirmPassword.Name = "txtConfirmPassword";
+            this.txtConfirmPassword.PasswordChar = '●';
+            this.txtConfirmPassword.Size = new System.Drawing.Size(341, 32);
+            this.txtConfirmPassword.TabIndex = 10;
+            // 
             // lblAddress
             // 
             this.lblAddress.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
             this.lblAddress.ForeColor = System.Drawing.Color.White;
-            this.lblAddress.Location = new System.Drawing.Point(719, 414);
+            this.lblAddress.Location = new System.Drawing.Point(719, 482);
             this.lblAddress.Name = "lblAddress";
             this.lblAddress.Size = new System.Drawing.Size(100, 23);
-            this.lblAddress.TabIndex = 9;
+            this.lblAddress.TabIndex = 11;
             this.lblAddress.Text = "Address";
             // 
             // txtAddress
@@ -178,19 +204,19 @@
             this.txtAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.txtAddress.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.txtAddress.ForeColor = System.Drawing.Color.White;
-            this.txtAddress.Location = new System.Drawing.Point(723, 440);
+            this.txtAddress.Location = new System.Drawing.Point(723, 508);
             this.txtAddress.Name = "txtAddress";
             this.txtAddress.Size = new System.Drawing.Size(341, 32);
-            this.txtAddress.TabIndex = 10;
+            this.txtAddress.TabIndex = 12;
             // 
             // lblContact
             // 
             this.lblContact.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
             this.lblContact.ForeColor = System.Drawing.Color.White;
-            this.lblContact.Location = new System.Drawing.Point(719, 482);
+            this.lblContact.Location = new System.Drawing.Point(719, 550);
             this.lblContact.Name = "lblContact";
             this.lblContact.Size = new System.Drawing.Size(150, 23);
-            this.lblContact.TabIndex = 11;
+            this.lblContact.TabIndex = 13;
             this.lblContact.Text = "Contact Number";
             // 
             // txtContact
@@ -199,10 +225,10 @@
             this.txtContact.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.txtContact.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.txtContact.ForeColor = System.Drawing.Color.White;
-            this.txtContact.Location = new System.Drawing.Point(723, 508);
+            this.txtContact.Location = new System.Drawing.Point(723, 576);
             this.txtContact.Name = "txtContact";
             this.txtContact.Size = new System.Drawing.Size(341, 32);
-            this.txtContact.TabIndex = 12;
+            this.txtContact.TabIndex = 14;
             // 
             // btnRegister
             // 
@@ -211,10 +237,10 @@
             this.btnRegister.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnRegister.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnRegister.ForeColor = System.Drawing.Color.White;
-            this.btnRegister.Location = new System.Drawing.Point(773, 560);
+            this.btnRegister.Location = new System.Drawing.Point(773, 628);
             this.btnRegister.Name = "btnRegister";
             this.btnRegister.Size = new System.Drawing.Size(240, 45);
-            this.btnRegister.TabIndex = 13;
+            this.btnRegister.TabIndex = 15;
             this.btnRegister.Text = "REGISTER";
             this.btnRegister.UseVisualStyleBackColor = false;
             this.btnRegister.Click += new System.EventHandler(this.btnRegister_Click);
@@ -229,10 +255,10 @@
             this.btnBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnBack.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnBack.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(126)))), ((int)(((byte)(249)))));
-            this.btnBack.Location = new System.Drawing.Point(860, 652);
+            this.btnBack.Location = new System.Drawing.Point(860, 720);
             this.btnBack.Name = "btnBack";
             this.btnBack.Size = new System.Drawing.Size(77, 34);
-            this.btnBack.TabIndex = 15;
+            this.btnBack.TabIndex = 17;
             this.btnBack.Text = "Sign in";
             this.btnBack.UseVisualStyleBackColor = false;
             this.btnBack.Click += new System.EventHandler(this.btnBack_Click);
@@ -263,10 +289,10 @@
             // 
             this.lblHaveAccount.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblHaveAccount.ForeColor = System.Drawing.Color.White;
-            this.lblHaveAccount.Location = new System.Drawing.Point(794, 626);
+            this.lblHaveAccount.Location = new System.Drawing.Point(794, 694);
             this.lblHaveAccount.Name = "lblHaveAccount";
             this.lblHaveAccount.Size = new System.Drawing.Size(211, 23);
-            this.lblHaveAccount.TabIndex = 14;
+            this.lblHaveAccount.TabIndex = 16;
             this.lblHaveAccount.Text = "Already have an account?";
             // 
             // frmRegister
@@ -284,6 +310,8 @@
             this.Controls.Add(this.txtEmail);
             this.Controls.Add(this.lblPassword);
             this.Controls.Add(this.txtPassword);
+            this.Controls.Add(this.lblConfirmPassword);
+            this.Controls.Add(this.txtConfirmPassword);
             this.Controls.Add(this.lblAddress);
             this.Controls.Add(this.txtAddress);
             this.Controls.Add(this.lblContact);

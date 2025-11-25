@@ -18,6 +18,7 @@ namespace BarangayCogonEventManagementSystem
             string lastName = txtLastName.Text.Trim();
             string email = txtEmail.Text.Trim();
             string password = txtPassword.Text.Trim();
+            string confirmPassword = txtConfirmPassword.Text.Trim();
             string address = txtAddress.Text.Trim();
             string contact = txtContact.Text.Trim();
 
@@ -26,6 +27,16 @@ namespace BarangayCogonEventManagementSystem
             {
                 MessageBox.Show("Please fill in all required fields (First Name, Last Name, Email, and Password).", 
                     "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Check if passwords match
+            if (password != confirmPassword)
+            {
+                MessageBox.Show("Passwords do not match. Please try again.", 
+                    "Password Mismatch", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtConfirmPassword.Clear();
+                txtConfirmPassword.Focus();
                 return;
             }
 
