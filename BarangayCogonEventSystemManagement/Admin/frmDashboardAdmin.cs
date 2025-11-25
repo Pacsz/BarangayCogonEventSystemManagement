@@ -751,21 +751,25 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
-                // Load statistics - Updated to count new statuses
+                // Load statistics - Updated to show more relevant admin metrics
                 string statsQuery = @"SELECT 
                                     (SELECT COUNT(*) FROM events) AS total_events,
-                                    (SELECT COUNT(*) FROM registrations WHERE role='attendee' AND status IN ('Approved', 'Checked-in', 'Attended')) AS total_attendees,
-                                    (SELECT COUNT(*) FROM registrations WHERE role='volunteer' AND status IN ('Approved', 'Checked-in', 'Attended')) AS total_volunteers,
-                                    (SELECT COUNT(*) FROM registrations WHERE status IN ('Attended', 'Checked-in')) AS total_present";
+                                    (SELECT COUNT(*) FROM registrations WHERE status IN ('Approved', 'Checked-in', 'Attended')) AS total_registrations,
+                                    (SELECT COUNT(*) FROM registrations WHERE status = 'Pending') AS pending_approvals,
+                                    (SELECT COUNT(DISTINCT r.id) 
+                                     FROM registrations r
+                                     INNER JOIN events e ON r.event_id = e.id
+                                     WHERE r.status = 'Checked-in' 
+                                     AND NOW() BETWEEN e.start_datetime AND e.end_datetime) AS active_attendance";
 
                 DataTable dtStats = DatabaseHelper.ExecuteQuery(statsQuery);
 
                 if (dtStats.Rows.Count > 0)
                 {
                     lblEventsCount.Text = dtStats.Rows[0]["total_events"].ToString();
-                    lblAttendeesCount.Text = dtStats.Rows[0]["total_attendees"].ToString();
-                    lblVolunteersCount.Text = dtStats.Rows[0]["total_volunteers"].ToString();
-                    lblPresentCount.Text = dtStats.Rows[0]["total_present"].ToString();
+                    lblAttendeesCount.Text = dtStats.Rows[0]["total_registrations"].ToString();
+                    lblVolunteersCount.Text = dtStats.Rows[0]["pending_approvals"].ToString();
+                    lblPresentCount.Text = dtStats.Rows[0]["active_attendance"].ToString();
                 }
 
                 // Load recent registrations (last 2 days) with ID and QR code

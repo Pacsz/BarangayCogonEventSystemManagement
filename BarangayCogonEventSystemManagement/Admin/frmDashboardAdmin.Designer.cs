@@ -390,7 +390,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.iconPresent.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
             this.iconPresent.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(233)))), ((int)(((byte)(30)))), ((int)(((byte)(99)))));
-            this.iconPresent.IconChar = FontAwesome.Sharp.IconChar.UserCheck;
+            this.iconPresent.IconChar = FontAwesome.Sharp.IconChar.UserClock;
             this.iconPresent.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(233)))), ((int)(((byte)(30)))), ((int)(((byte)(99)))));
             this.iconPresent.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconPresent.IconSize = 48;
@@ -419,7 +419,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblPresent.Name = "lblPresent";
             this.lblPresent.Size = new System.Drawing.Size(170, 25);
             this.lblPresent.TabIndex = 2;
-            this.lblPresent.Text = "Present";
+            this.lblPresent.Text = "Active Attendance";
             // 
             // pnlVolunteersCard
             // 
@@ -436,7 +436,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.iconVolunteers.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
             this.iconVolunteers.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
-            this.iconVolunteers.IconChar = FontAwesome.Sharp.IconChar.HandshakeAngle;
+            this.iconVolunteers.IconChar = FontAwesome.Sharp.IconChar.ClockFour;
             this.iconVolunteers.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
             this.iconVolunteers.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconVolunteers.IconSize = 48;
@@ -465,7 +465,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblVolunteers.Name = "lblVolunteers";
             this.lblVolunteers.Size = new System.Drawing.Size(170, 25);
             this.lblVolunteers.TabIndex = 2;
-            this.lblVolunteers.Text = "Volunteers";
+            this.lblVolunteers.Text = "Pending Approvals";
             // 
             // pnlAttendeesCard
             // 
@@ -482,7 +482,7 @@ namespace BarangayCogonEventManagementSystem
             // 
             this.iconAttendees.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
             this.iconAttendees.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
-            this.iconAttendees.IconChar = FontAwesome.Sharp.IconChar.Users;
+            this.iconAttendees.IconChar = FontAwesome.Sharp.IconChar.ClipboardList;
             this.iconAttendees.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
             this.iconAttendees.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconAttendees.IconSize = 48;
@@ -511,7 +511,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblAttendees.Name = "lblAttendees";
             this.lblAttendees.Size = new System.Drawing.Size(170, 25);
             this.lblAttendees.TabIndex = 2;
-            this.lblAttendees.Text = "Attendees";
+            this.lblAttendees.Text = "Total Registrations";
             // 
             // pnlEventsCard
             // 
