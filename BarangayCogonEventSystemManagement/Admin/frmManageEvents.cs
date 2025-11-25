@@ -1079,21 +1079,67 @@ namespace BarangayCogonEventManagementSystem
 
         private void DeleteEvent(int eventId)
         {
-            if (MessageBox.Show("Are you sure you want to delete this event?",
-                "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            try
             {
-                try
+                // Get event details and count of related records before deletion
+                string countQuery = @"SELECT 
+                                        e.name AS event_name,
+                                        (SELECT COUNT(*) FROM registrations WHERE event_id = @id) AS registration_count,
+                                        (SELECT COUNT(*) FROM attendance a 
+                                         INNER JOIN registrations r ON a.registration_id = r.id 
+                                         WHERE r.event_id = @id) AS attendance_count,
+                                        (SELECT COUNT(*) FROM reports WHERE event_id = @id) AS report_count
+                                      FROM events e 
+                                      WHERE e.id = @id";
+                
+                MySqlParameter[] countParams = { new MySqlParameter("@id", eventId) };
+                DataTable dt = DatabaseHelper.ExecuteQuery(countQuery, countParams);
+                
+                if (dt.Rows.Count == 0)
+                {
+                    MessageBox.Show("Event not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                string eventName = dt.Rows[0]["event_name"].ToString();
+                int registrationCount = Convert.ToInt32(dt.Rows[0]["registration_count"]);
+                int attendanceCount = Convert.ToInt32(dt.Rows[0]["attendance_count"]);
+                int reportCount = Convert.ToInt32(dt.Rows[0]["report_count"]);
+                
+                // Build warning message
+                string warningMessage = $"Are you sure you want to delete this event?\n\n" +
+                                       $"Event: {eventName}\n\n" +
+                                       $"⚠️ WARNING: This will also permanently delete:\n" +
+                                       $"  • {registrationCount} registration(s)\n" +
+                                       $"  • {attendanceCount} attendance record(s)\n" +
+                                       $"  • {reportCount} report(s)\n\n" +
+                                       $"This action cannot be undone!";
+                
+                DialogResult result = MessageBox.Show(warningMessage, "Confirm Delete", 
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                
+                if (result == DialogResult.Yes)
                 {
                     string query = "DELETE FROM events WHERE id=@id";
                     MySqlParameter[] parameters = { new MySqlParameter("@id", eventId) };
                     DatabaseHelper.ExecuteNonQuery(query, parameters);
-                    MessageBox.Show("Event deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
+                    MessageBox.Show(
+                        $"Event '{eventName}' and all related records deleted successfully!\n\n" +
+                        $"Deleted:\n" +
+                        $"  • 1 event\n" +
+                        $"  • {registrationCount} registration(s)\n" +
+                        $"  • {attendanceCount} attendance record(s)\n" +
+                        $"  • {reportCount} report(s)", 
+                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    
                     LoadEvents();
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error deleting event: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting event: " + ex.Message, "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
