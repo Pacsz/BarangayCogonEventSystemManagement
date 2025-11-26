@@ -9,6 +9,7 @@ namespace BarangayCogonEventManagementSystem
         private System.Windows.Forms.Panel topBar;
         private System.Windows.Forms.Label lblTitle;
         private IconButton btnManageEvents;
+        private IconButton btnManageUsers;
         private IconButton btnRegistrations;
         private IconButton btnQRScanner;
         private IconButton btnReports;
@@ -16,6 +17,7 @@ namespace BarangayCogonEventManagementSystem
         private IconButton btnDashboard;
         private System.Windows.Forms.Panel pnlNav;
         private System.Windows.Forms.Panel mainPanel;
+        private System.Windows.Forms.PictureBox pictureBox2;
         
         // Stat Cards
         private System.Windows.Forms.Panel pnlEventsCard;
@@ -52,6 +54,12 @@ namespace BarangayCogonEventManagementSystem
             base.Dispose(disposing);
         }
 
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmDashboardAdmin));
@@ -62,6 +70,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnQRScanner = new FontAwesome.Sharp.IconButton();
             this.btnReports = new FontAwesome.Sharp.IconButton();
             this.btnRegistrations = new FontAwesome.Sharp.IconButton();
+            this.btnManageUsers = new FontAwesome.Sharp.IconButton();
             this.btnManageEvents = new FontAwesome.Sharp.IconButton();
             this.btnDashboard = new FontAwesome.Sharp.IconButton();
             this.topBar = new System.Windows.Forms.Panel();
@@ -112,6 +121,7 @@ namespace BarangayCogonEventManagementSystem
             this.sidebar.Controls.Add(this.btnQRScanner);
             this.sidebar.Controls.Add(this.btnReports);
             this.sidebar.Controls.Add(this.btnRegistrations);
+            this.sidebar.Controls.Add(this.btnManageUsers);
             this.sidebar.Controls.Add(this.btnManageEvents);
             this.sidebar.Controls.Add(this.btnDashboard);
             this.sidebar.Dock = System.Windows.Forms.DockStyle.Left;
@@ -178,7 +188,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnQRScanner.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnQRScanner.IconSize = 32;
             this.btnQRScanner.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnQRScanner.Location = new System.Drawing.Point(12, 411);
+            this.btnQRScanner.Location = new System.Drawing.Point(12, 465);
             this.btnQRScanner.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnQRScanner.Name = "btnQRScanner";
             this.btnQRScanner.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -201,7 +211,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnReports.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnReports.IconSize = 32;
             this.btnReports.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnReports.Location = new System.Drawing.Point(12, 357);
+            this.btnReports.Location = new System.Drawing.Point(12, 411);
             this.btnReports.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnReports.Name = "btnReports";
             this.btnReports.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -224,7 +234,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnRegistrations.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.btnRegistrations.IconSize = 32;
             this.btnRegistrations.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnRegistrations.Location = new System.Drawing.Point(12, 303);
+            this.btnRegistrations.Location = new System.Drawing.Point(12, 357);
             this.btnRegistrations.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnRegistrations.Name = "btnRegistrations";
             this.btnRegistrations.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
@@ -235,6 +245,29 @@ namespace BarangayCogonEventManagementSystem
             this.btnRegistrations.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnRegistrations.UseVisualStyleBackColor = true;
             this.btnRegistrations.Click += new System.EventHandler(this.btnRegistrations_Click);
+            // 
+            // btnManageUsers
+            // 
+            this.btnManageUsers.FlatAppearance.BorderSize = 0;
+            this.btnManageUsers.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnManageUsers.Font = new System.Drawing.Font("Segoe UI", 11F);
+            this.btnManageUsers.ForeColor = System.Drawing.Color.White;
+            this.btnManageUsers.IconChar = FontAwesome.Sharp.IconChar.Users;
+            this.btnManageUsers.IconColor = System.Drawing.Color.White;
+            this.btnManageUsers.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            this.btnManageUsers.IconSize = 32;
+            this.btnManageUsers.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnManageUsers.Location = new System.Drawing.Point(12, 303);
+            this.btnManageUsers.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.btnManageUsers.Name = "btnManageUsers";
+            this.btnManageUsers.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
+            this.btnManageUsers.Size = new System.Drawing.Size(226, 48);
+            this.btnManageUsers.TabIndex = 2;
+            this.btnManageUsers.Text = "  Manage Users";
+            this.btnManageUsers.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnManageUsers.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnManageUsers.UseVisualStyleBackColor = true;
+            this.btnManageUsers.Click += new System.EventHandler(this.btnManageUsers_Click);
             // 
             // btnManageEvents
             // 
@@ -252,7 +285,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnManageEvents.Name = "btnManageEvents";
             this.btnManageEvents.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
             this.btnManageEvents.Size = new System.Drawing.Size(226, 48);
-            this.btnManageEvents.TabIndex = 2;
+            this.btnManageEvents.TabIndex = 1;
             this.btnManageEvents.Text = "  Manage Events";
             this.btnManageEvents.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnManageEvents.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -275,7 +308,7 @@ namespace BarangayCogonEventManagementSystem
             this.btnDashboard.Name = "btnDashboard";
             this.btnDashboard.Padding = new System.Windows.Forms.Padding(10, 0, 0, 0);
             this.btnDashboard.Size = new System.Drawing.Size(226, 48);
-            this.btnDashboard.TabIndex = 1;
+            this.btnDashboard.TabIndex = 0;
             this.btnDashboard.Text = "  Dashboard";
             this.btnDashboard.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnDashboard.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
@@ -427,7 +460,7 @@ namespace BarangayCogonEventManagementSystem
             this.pnlVolunteersCard.Controls.Add(this.iconVolunteers);
             this.pnlVolunteersCard.Controls.Add(this.lblVolunteersCount);
             this.pnlVolunteersCard.Controls.Add(this.lblVolunteers);
-            this.pnlVolunteersCard.Location = new System.Drawing.Point(590, 30);
+            this.pnlVolunteersCard.Location = new System.Drawing.Point(600, 30);
             this.pnlVolunteersCard.Name = "pnlVolunteersCard";
             this.pnlVolunteersCard.Size = new System.Drawing.Size(260, 120);
             this.pnlVolunteersCard.TabIndex = 2;
@@ -435,9 +468,9 @@ namespace BarangayCogonEventManagementSystem
             // iconVolunteers
             // 
             this.iconVolunteers.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
-            this.iconVolunteers.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
-            this.iconVolunteers.IconChar = FontAwesome.Sharp.IconChar.ClockFour;
-            this.iconVolunteers.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
+            this.iconVolunteers.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
+            this.iconVolunteers.IconChar = FontAwesome.Sharp.IconChar.UsersCog;
+            this.iconVolunteers.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
             this.iconVolunteers.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconVolunteers.IconSize = 48;
             this.iconVolunteers.Location = new System.Drawing.Point(20, 35);
@@ -465,7 +498,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblVolunteers.Name = "lblVolunteers";
             this.lblVolunteers.Size = new System.Drawing.Size(170, 25);
             this.lblVolunteers.TabIndex = 2;
-            this.lblVolunteers.Text = "Pending Approvals";
+            this.lblVolunteers.Text = "Active Volunteers";
             // 
             // pnlAttendeesCard
             // 
@@ -473,7 +506,7 @@ namespace BarangayCogonEventManagementSystem
             this.pnlAttendeesCard.Controls.Add(this.iconAttendees);
             this.pnlAttendeesCard.Controls.Add(this.lblAttendeesCount);
             this.pnlAttendeesCard.Controls.Add(this.lblAttendees);
-            this.pnlAttendeesCard.Location = new System.Drawing.Point(310, 30);
+            this.pnlAttendeesCard.Location = new System.Drawing.Point(330, 30);
             this.pnlAttendeesCard.Name = "pnlAttendeesCard";
             this.pnlAttendeesCard.Size = new System.Drawing.Size(260, 120);
             this.pnlAttendeesCard.TabIndex = 1;
@@ -481,9 +514,9 @@ namespace BarangayCogonEventManagementSystem
             // iconAttendees
             // 
             this.iconAttendees.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
-            this.iconAttendees.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
-            this.iconAttendees.IconChar = FontAwesome.Sharp.IconChar.ClipboardList;
-            this.iconAttendees.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(76)))), ((int)(((byte)(175)))), ((int)(((byte)(80)))));
+            this.iconAttendees.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
+            this.iconAttendees.IconChar = FontAwesome.Sharp.IconChar.UserCheck;
+            this.iconAttendees.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(193)))), ((int)(((byte)(7)))));
             this.iconAttendees.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconAttendees.IconSize = 48;
             this.iconAttendees.Location = new System.Drawing.Point(20, 35);
@@ -511,7 +544,7 @@ namespace BarangayCogonEventManagementSystem
             this.lblAttendees.Name = "lblAttendees";
             this.lblAttendees.Size = new System.Drawing.Size(170, 25);
             this.lblAttendees.TabIndex = 2;
-            this.lblAttendees.Text = "Total Registrations";
+            this.lblAttendees.Text = "Active Attendees";
             // 
             // pnlEventsCard
             // 
@@ -527,9 +560,9 @@ namespace BarangayCogonEventManagementSystem
             // iconEvents
             // 
             this.iconEvents.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(42)))), ((int)(((byte)(64)))));
-            this.iconEvents.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(126)))), ((int)(((byte)(249)))));
-            this.iconEvents.IconChar = FontAwesome.Sharp.IconChar.CalendarAlt;
-            this.iconEvents.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(126)))), ((int)(((byte)(249)))));
+            this.iconEvents.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
+            this.iconEvents.IconChar = FontAwesome.Sharp.IconChar.CalendarCheck;
+            this.iconEvents.IconColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(150)))), ((int)(((byte)(243)))));
             this.iconEvents.IconFont = FontAwesome.Sharp.IconFont.Auto;
             this.iconEvents.IconSize = 48;
             this.iconEvents.Location = new System.Drawing.Point(20, 35);
@@ -557,21 +590,21 @@ namespace BarangayCogonEventManagementSystem
             this.lblEvents.Name = "lblEvents";
             this.lblEvents.Size = new System.Drawing.Size(170, 25);
             this.lblEvents.TabIndex = 2;
-            this.lblEvents.Text = "Total Events";
+            this.lblEvents.Text = "Upcoming Events";
             // 
             // frmDashboardAdmin
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 24F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1400, 800);
             this.Controls.Add(this.mainPanel);
             this.Controls.Add(this.topBar);
             this.Controls.Add(this.sidebar);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Font = new System.Drawing.Font("Segoe UI", 12F);
+            this.ForeColor = System.Drawing.Color.Black;
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.MaximizeBox = false;
             this.Name = "frmDashboardAdmin";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Admin Dashboard - BEMS";
+            this.Text = "Admin Dashboard";
             this.Load += new System.EventHandler(this.frmDashboardAdmin_Load);
             this.sidebar.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
@@ -591,6 +624,6 @@ namespace BarangayCogonEventManagementSystem
 
         }
 
-        private System.Windows.Forms.PictureBox pictureBox2;
+        #endregion
     }
 }

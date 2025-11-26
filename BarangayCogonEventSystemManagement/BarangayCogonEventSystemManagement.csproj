@@ -129,6 +129,12 @@
     <Compile Include="Admin\frmEventAttendees.Designer.cs">
       <DependentUpon>frmEventAttendees.cs</DependentUpon>
     </Compile>
+    <Compile Include="Admin\frmManageUsers.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Admin\frmManageUsers.Designer.cs">
+      <DependentUpon>frmManageUsers.cs</DependentUpon>
+    </Compile>
     <Compile Include="Admin\frmRegistrations.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -224,6 +230,9 @@
     <EmbeddedResource Include="Admin\frmEventAttendees.resx">
       <DependentUpon>frmEventAttendees.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Admin\frmManageUsers.resx">
+      <DependentUpon>frmManageUsers.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Admin\frmRegistrations.resx">
       <DependentUpon>frmRegistrations.cs</DependentUpon>

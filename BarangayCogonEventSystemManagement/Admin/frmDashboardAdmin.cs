@@ -886,6 +886,13 @@ namespace BarangayCogonEventManagementSystem
             OpenChild(new frmManageEvents());
         }
 
+        private void btnManageUsers_Click(object sender, EventArgs e)
+        {
+            HighlightNav(btnManageUsers);
+            lblTitle.Text = "Manage Users";
+            OpenChild(new frmManageUsers());
+        }
+
         private void btnRegistrations_Click(object sender, EventArgs e)
         {
             HighlightNav(btnRegistrations);
