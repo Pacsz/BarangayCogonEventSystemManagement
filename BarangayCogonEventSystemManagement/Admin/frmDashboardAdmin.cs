@@ -369,6 +369,15 @@ namespace BarangayCogonEventManagementSystem
                     contextMenuQuickActions.Items.Add(approveItem);
                 }
 
+                else
+                {
+                    // Show View QR for attended registrations (completed)
+                    ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
+                    viewQRItem.Font = new Font("Segoe UI", 10F);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, userName, qrCode);
+                    contextMenuQuickActions.Items.Add(viewQRItem);
+                }
+
                 // Add separator
                 contextMenuQuickActions.Items.Add(new ToolStripSeparator());
 
@@ -455,12 +464,57 @@ namespace BarangayCogonEventManagementSystem
         {
             try
             {
+                // First, get the registration details including event name and user name for QR file deletion
+                string getDetailsQuery = @"SELECT e.name AS event_name, 
+                                                 CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+                                                 r.qr_code
+                                         FROM registrations r
+                                         INNER JOIN events e ON r.event_id = e.id
+                                         INNER JOIN users u ON r.user_id = u.id
+                                         WHERE r.id = @id";
+                MySqlParameter[] getDetailsParams = { new MySqlParameter("@id", registrationId) };
+                DataTable dtDetails = DatabaseHelper.ExecuteQuery(getDetailsQuery, getDetailsParams);
+
+                if (dtDetails.Rows.Count == 0)
+                {
+                    MessageBox.Show("Registration not found.", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                string eventName = dtDetails.Rows[0]["event_name"].ToString();
+                string userName = dtDetails.Rows[0]["user_name"].ToString();
+                string qrCode = dtDetails.Rows[0]["qr_code"]?.ToString();
+
                 DialogResult result = MessageBox.Show("Are you sure you want to reject this registration?",
                     "Confirm Rejection", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (result == DialogResult.Yes)
                 {
-                    string query = "UPDATE registrations SET status='Rejected' WHERE id=@id";
+                    // Delete QR code file if it exists
+                    if (!string.IsNullOrEmpty(qrCode))
+                    {
+                        try
+                        {
+                            string fileName = $"{eventName}_{userName}.png".Replace(" ", "_");
+                            string folderPath = Path.Combine(Application.StartupPath, "Assets", "QR_Codes");
+                            string fullPath = Path.Combine(folderPath, fileName);
+
+                            if (File.Exists(fullPath))
+                            {
+                                File.Delete(fullPath);
+                                System.Diagnostics.Debug.WriteLine($"Deleted QR code file: {fullPath}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error deleting QR code file: {ex.Message}");
+                            // Continue with rejection even if file deletion fails
+                        }
+                    }
+
+                    // Update database - set status to Rejected and qr_code to NULL
+                    string query = "UPDATE registrations SET status='Rejected', qr_code=NULL WHERE id=@id";
                     MySqlParameter[] parameters = { new MySqlParameter("@id", registrationId) };
 
                     int rowsAffected = DatabaseHelper.ExecuteNonQuery(query, parameters);
