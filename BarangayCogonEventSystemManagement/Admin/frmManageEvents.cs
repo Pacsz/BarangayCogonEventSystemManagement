@@ -530,7 +530,7 @@ namespace BarangayCogonEventManagementSystem
                                         WHEN DATE(start_datetime) = DATE(end_datetime) THEN DATE_FORMAT(start_datetime, '%b %d, %Y')
                                         ELSE CONCAT(DATE_FORMAT(start_datetime, '%b %d'), ' - ', DATE_FORMAT(end_datetime, '%b %d, %Y'))
                                     END AS date_display,
-                                    CONCAT(DATE_FORMAT(start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(end_datetime, '%h:%i %p')) AS time_display,
+                                    CONCAT(DATE_FORMAT(start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(endDatetime, '%h:%i %p')) AS time_display,
                                     venue, 
                                     type, 
                                     organizer 
@@ -963,9 +963,30 @@ namespace BarangayCogonEventManagementSystem
             {
                 try
                 {
+                    // Validate required fields
                     if (string.IsNullOrWhiteSpace(txtName.Text))
                     {
                         MessageBox.Show("Please enter an event name.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(txtDesc.Text))
+                    {
+                        MessageBox.Show("Please enter a description.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(txtVenue.Text))
+                    {
+                        MessageBox.Show("Please enter a venue.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(cboType.Text))
+                    {
+                        MessageBox.Show("Please select an event type.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(txtOrganizer.Text))
+                    {
+                        MessageBox.Show("Please enter an organizer.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
 
