@@ -18,12 +18,20 @@ namespace BarangayCogonEventManagementSystem
         private TextBox txtSearch;
         private ComboBox cboStatusFilter;
         private ComboBox cboRoleFilter;
+        private bool showActions = true;
 
-        public frmEventAttendees(int eventId, string eventName)
+        // Existing single-parameter constructor delegates to new constructor (keeps backward compatibility)
+        public frmEventAttendees(int eventId, string eventName) : this(eventId, eventName, true)
+        {
+        }
+
+        // New constructor with option to hide action column/handlers
+        public frmEventAttendees(int eventId, string eventName, bool showActions = true)
         {
             InitializeComponent();
             this.eventId = eventId;
             this.eventName = eventName;
+            this.showActions = showActions;
             this.Text = $"Attendees - {eventName}";
             this.Size = new Size(1000, 630);
             this.StartPosition = FormStartPosition.CenterParent;
@@ -339,17 +347,20 @@ namespace BarangayCogonEventManagementSystem
                 Visible = false
             });
 
-            dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
+            if (showActions)
             {
-                Name = "ActionColumn",
-                HeaderText = "Action",
-                ReadOnly = true,
-                FillWeight = 15
-            });
+                dgvAttendees.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "ActionColumn",
+                    HeaderText = "Action",
+                    ReadOnly = true,
+                    FillWeight = 15
+                });
 
-            // Wire up event handlers
-            dgvAttendees.CellPainting += dgvAttendees_CellPainting;
-            dgvAttendees.CellClick += dgvAttendees_CellClick;
+                // Wire up event handlers
+                dgvAttendees.CellPainting += dgvAttendees_CellPainting;
+                dgvAttendees.CellClick += dgvAttendees_CellClick;
+            }
         }
 
         private GraphicsPath GetRoundPath(Rectangle rect, int radius)
@@ -368,6 +379,8 @@ namespace BarangayCogonEventManagementSystem
 
         private void dgvAttendees_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
+            if (!showActions) return;
+
             if (e.RowIndex < 0) return;
 
             var actionColumn = dgvAttendees.Columns["ActionColumn"];
@@ -412,6 +425,8 @@ namespace BarangayCogonEventManagementSystem
 
         private void dgvAttendees_CellClick(object sender, DataGridViewCellEventArgs e)
         {
+            if (!showActions) return;
+
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0 &&
                 dgvAttendees.Columns[e.ColumnIndex].Name == "ActionColumn")
             {
@@ -888,14 +903,28 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count == 0)
                 {
-                    int placeholderIndex = dgvAttendees.Rows.Add(
-                        0, "No registrations found matching your criteria", "", "", "", "", "", ""
-                    );
+                    if (showActions)
+                    {
+                        int placeholderIndex = dgvAttendees.Rows.Add(
+                            0, "No registrations found matching your criteria", "", "", "", "", "", "", ""
+                        );
 
-                    DataGridViewRow placeholderRow = dgvAttendees.Rows[placeholderIndex];
-                    placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
-                    placeholderRow.DefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Italic);
-                    placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                        DataGridViewRow placeholderRow = dgvAttendees.Rows[placeholderIndex];
+                        placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
+                        placeholderRow.DefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                        placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    }
+                    else
+                    {
+                        int placeholderIndex = dgvAttendees.Rows.Add(
+                            0, "No registrations found matching your criteria", "", "", "", "", "", ""
+                        );
+
+                        DataGridViewRow placeholderRow = dgvAttendees.Rows[placeholderIndex];
+                        placeholderRow.DefaultCellStyle.ForeColor = Color.FromArgb(158, 161, 178);
+                        placeholderRow.DefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                        placeholderRow.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    }
                 }
                 else
                 {
@@ -951,17 +980,33 @@ namespace BarangayCogonEventManagementSystem
                             UpdateRegistrationStatus(registrationId, newStatus);
                         }
 
-                        dgvAttendees.Rows.Add(
-                            dr["registration_id"],
-                            dr["full_name"],
-                            dr["email"],
-                            dr["contact"],
-                            capitalizedRole,
-                            newStatus,
-                            dr["qr_code"],
-                            dr["end_datetime"],
-                            "" // ActionColumn (will be custom painted)
-                        );
+                        if (showActions)
+                        {
+                            dgvAttendees.Rows.Add(
+                                dr["registration_id"],
+                                dr["full_name"],
+                                dr["email"],
+                                dr["contact"],
+                                capitalizedRole,
+                                newStatus,
+                                dr["qr_code"],
+                                dr["end_datetime"],
+                                "" // ActionColumn (will be custom painted)
+                            );
+                        }
+                        else
+                        {
+                            dgvAttendees.Rows.Add(
+                                dr["registration_id"],
+                                dr["full_name"],
+                                dr["email"],
+                                dr["contact"],
+                                capitalizedRole,
+                                newStatus,
+                                dr["qr_code"],
+                                dr["end_datetime"]
+                            );
+                        }
                     }
                 }
 

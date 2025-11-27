@@ -261,6 +261,12 @@ namespace BarangayCogonEventManagementSystem
             typeof(DataGridView).InvokeMember("DoubleBuffered",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.SetProperty,
                 null, dgvReports, new object[] { true });
+
+            // Ensure any existing handlers are not duplicated
+            dgvReports.CellPainting -= dgvReports_CellPainting;
+            dgvReports.CellClick -= dgvReports_ActionCellClick;
+            dgvReports.CellPainting += dgvReports_CellPainting;
+            dgvReports.CellClick += dgvReports_ActionCellClick;
        }
 
         private void StyleButtons()
@@ -377,7 +383,16 @@ namespace BarangayCogonEventManagementSystem
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "registered", HeaderText = "Registered", FillWeight = 12 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "attended", HeaderText = "Attended", FillWeight = 12 });
                     dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "rate", HeaderText = "Attendance %", FillWeight = 17 });
+
+                    // Add Action column for opening attendee details (painted button)
+                    dgvReports.Columns.Add(new DataGridViewTextBoxColumn { Name = "ActionColumn", HeaderText = "Action", FillWeight = 12 });
                 }
+
+                // Ensure painted action button and click handler are attached (already in CustomizeDataGridView but ensure here as well)
+                dgvReports.CellPainting -= dgvReports_CellPainting;
+                dgvReports.CellPainting += dgvReports_CellPainting;
+                dgvReports.CellClick -= dgvReports_ActionCellClick;
+                dgvReports.CellClick += dgvReports_ActionCellClick;
 
                 int totalEvents = dt.Rows.Count;
                 int totalAttendees = 0, totalVolunteers = 0, totalSpeakers = 0, totalRegistered = 0, totalAttended = 0, totalDidntAttend = 0, totalPending = 0, completed = 0;
@@ -393,7 +408,8 @@ namespace BarangayCogonEventManagementSystem
                         "", // type
                         "", // registered
                         "", // attended
-                        ""  // rate
+                        "",  // rate
+                        ""   // action
                     );
 
                     // Style the placeholder row
@@ -457,7 +473,7 @@ namespace BarangayCogonEventManagementSystem
                         string rateStr = rate > 0 ? (rate >= 90 ? "🟢 " : rate >= 70 ? "🟡 " : "🔴 ") + rate.ToString("F1") + "%" : "N/A";
 
                         int idx = dgvReports.Rows.Add(dr["id"], dr["Event Name"], dr["date_display"], 
-                            dr["Type"], registered, attended, rateStr);
+                            dr["Type"], registered, attended, rateStr, "");
 
                         // Color rows by performance
                         if (rate >= 90)
@@ -497,7 +513,9 @@ namespace BarangayCogonEventManagementSystem
                         $"  • Attendees/Event: {(totalEvents > 0 ? (double)totalAttendees / totalEvents : 0):F1}\n" +
                         $"  • Volunteers/Event: {(totalEvents > 0 ? (double)totalVolunteers / totalEvents : 0):F1}\n" +
                         $"  • Speakers/Event: {(totalEvents > 0 ? (double)totalSpeakers / totalEvents : 0):F1}\n" +
-                        $"  • Registered/Event: {(totalEvents > 0 ? (double)totalRegistered / totalEvents : 0):F1}";
+                        $"  • Registered/Event: {(totalEvents > 0 ? (double)totalRegistered / totalEvents : 0):F1}\n\n" +
+                        // Instruction updated to use the action button
+                        $"Tip: Use the 'View' action button on the right to open the attendee list for an event.";
                 }
 
                 dgvReports.ClearSelection();
@@ -505,6 +523,85 @@ namespace BarangayCogonEventManagementSystem
             catch (Exception ex)
             {
                 MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // New: paint action button in the ActionColumn
+        private void dgvReports_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            var actionColumn = dgvReports.Columns["ActionColumn"];
+            if (actionColumn == null) return;
+
+            if (e.ColumnIndex == actionColumn.Index)
+            {
+                e.Paint(e.CellBounds, DataGridViewPaintParts.All & ~DataGridViewPaintParts.ContentForeground);
+
+                // Check for placeholder row (id==0)
+                var idVal = dgvReports.Rows[e.RowIndex].Cells["id"].Value;
+                if (idVal == null || Convert.ToInt32(idVal) == 0)
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                System.Drawing.Rectangle cellBounds = e.CellBounds;
+
+                int buttonWidth = 70;
+                int buttonHeight = 30;
+                int buttonX = cellBounds.X + (cellBounds.Width - buttonWidth) / 2;
+                int buttonY = cellBounds.Y + (cellBounds.Height - buttonHeight) / 2;
+                System.Drawing.Rectangle buttonRect = new System.Drawing.Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+                int radius = 10;
+
+                using (GraphicsPath path = GetRoundPath(buttonRect, radius))
+                using (SolidBrush buttonBrush = new SolidBrush(Color.FromArgb(0, 126, 249)))
+                using (SolidBrush textBrush = new SolidBrush(Color.White))
+                using (System.Drawing.Font btnFont = new System.Drawing.Font("Segoe UI Symbol", 12F, FontStyle.Bold))
+                using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.FillPath(buttonBrush, path);
+                    // Use an attendees icon to indicate viewing registered users
+                    e.Graphics.DrawString("👥", btnFont, textBrush, buttonRect, sf);
+                }
+
+                e.Handled = true;
+            }
+        }
+
+        // New: handle clicks on the action button to open the attendee form
+        private void dgvReports_ActionCellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+
+                var actionColumn = dgvReports.Columns["ActionColumn"];
+                if (actionColumn == null) return;
+
+                if (e.ColumnIndex == actionColumn.Index)
+                {
+                    DataGridViewRow row = dgvReports.Rows[e.RowIndex];
+                    var idVal = row.Cells["id"].Value;
+                    if (idVal == null) return;
+
+                    int eventId = 0;
+                    if (!int.TryParse(idVal.ToString(), out eventId) || eventId == 0) return;
+
+                    string eventName = row.Cells["event_name"].Value?.ToString() ?? "(Event)";
+
+                    // Open frmEventAttendees as a dialog, hide its internal action column for a cleaner view
+                    using (var frm = new frmEventAttendees(eventId, eventName, false))
+                    {
+                        frm.ShowDialog(this);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error opening attendees: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -580,11 +677,11 @@ namespace BarangayCogonEventManagementSystem
                 SpacingAfter = 15
             });
 
-            // Count visible columns
+            // Count visible columns (exclude ActionColumn so PDF layout remains unchanged)
             int visibleColumns = 0;
             foreach (DataGridViewColumn col in dgvReports.Columns)
             {
-                if (col.Visible) visibleColumns++;
+                if (col.Visible && col.Name != "ActionColumn") visibleColumns++;
             }
 
             // Create table with portrait orientation
@@ -597,12 +694,22 @@ namespace BarangayCogonEventManagementSystem
 
             // Set column widths for better layout in portrait
             float[] widths = new float[] { 2.5f, 1.2f, 1.5f, 1f, 0.8f, 1f };
-            table.SetWidths(widths);
+            if (visibleColumns == widths.Length)
+            {
+                table.SetWidths(widths);
+            }
+            else
+            {
+                // fallback: distribute evenly
+                float[] fallback = new float[visibleColumns];
+                for (int i = 0; i < visibleColumns; i++) fallback[i] = 1f;
+                table.SetWidths(fallback);
+            }
 
-            // Add headers with WHITE text
+            // Add headers with WHITE text (skip ActionColumn)
             foreach (DataGridViewColumn column in dgvReports.Columns)
             {
-                if (column.Visible)
+                if (column.Visible && column.Name != "ActionColumn")
                 {
                     PdfPCell headerCell = new PdfPCell(new Phrase(column.HeaderText, headerFont))
                     {
@@ -616,12 +723,13 @@ namespace BarangayCogonEventManagementSystem
                 }
             }
 
-            // Add data rows
+            // Add data rows (skip ActionColumn)
             foreach (DataGridViewRow row in dgvReports.Rows)
             {
                 foreach (DataGridViewCell cell in row.Cells)
                 {
-                    if (dgvReports.Columns[cell.ColumnIndex].Visible)
+                    var col = dgvReports.Columns[cell.ColumnIndex];
+                    if (col.Visible && col.Name != "ActionColumn")
                     {
                         PdfPCell dataCell = new PdfPCell(new Phrase(cell.Value?.ToString() ?? "", normalFont))
                         {
@@ -782,6 +890,127 @@ namespace BarangayCogonEventManagementSystem
             averagesTable.AddCell(averagesCell);
 
             doc.Add(averagesTable);
+
+            // Add detailed breakdown (participant names) if available
+            // We'll generate a table per event (Name | Role | Status) on a new page
+            bool hasAnyEventDetails = false;
+            // Collect event IDs and names from dgvReports (skip placeholder rows)
+            var eventsList = new System.Collections.Generic.List<System.Tuple<int, string>>();
+            foreach (DataGridViewRow row in dgvReports.Rows)
+            {
+                if (row.IsNewRow) continue;
+                if (row.Cells["id"] == null) continue;
+                var idVal = row.Cells["id"].Value;
+                if (idVal == null) continue;
+                int id = 0;
+                if (!int.TryParse(idVal.ToString(), out id)) continue;
+                if (id == 0) continue; // skip placeholder or invalid
+                string ename = row.Cells["event_name"]?.Value?.ToString() ?? "(Event)";
+                eventsList.Add(System.Tuple.Create(id, ename));
+            }
+
+            if (eventsList.Count > 0)
+            {
+                // Start detailed breakdown on a new page
+                doc.NewPage();
+                Paragraph detailTitle = new Paragraph("PARTICIPANTS BREAKDOWN", summaryHeadingFont)
+                {
+                    SpacingBefore = 8,
+                    SpacingAfter = 6,
+                    Alignment = Element.ALIGN_LEFT
+                };
+                doc.Add(detailTitle);
+
+                foreach (var ev in eventsList)
+                {
+                    int evId = ev.Item1;
+                    string evName = ev.Item2;
+
+                    // Query participants for this event
+                    string partQuery = @"SELECT CONCAT(u.first_name, ' ', u.last_name) AS full_name, r.role, r.status
+                                         FROM registrations r
+                                         INNER JOIN users u ON r.user_id = u.id
+                                         WHERE r.event_id = @event_id
+                                         ORDER BY r.role ASC, u.first_name ASC, u.last_name ASC";
+                    MySqlParameter[] partParams = { new MySqlParameter("@event_id", evId) };
+                    DataTable partDt = DatabaseHelper.ExecuteQuery(partQuery, partParams);
+
+                    // Add event header
+                    Paragraph evHeader = new Paragraph("Participants for: " + evName, summaryFont)
+                    {
+                        SpacingBefore = 6,
+                        SpacingAfter = 4,
+                        Alignment = Element.ALIGN_LEFT
+                    };
+                    doc.Add(evHeader);
+
+                    if (partDt.Rows.Count == 0)
+                    {
+                        doc.Add(new Paragraph("  (No participants)", summaryFont));
+                        doc.Add(new Paragraph("\n"));
+                        continue;
+                    }
+
+                    // Create table with 3 columns: Name, Role, Status
+                    PdfPTable partTable = new PdfPTable(3)
+                    {
+                        WidthPercentage = 100,
+                        SpacingBefore = 2,
+                        SpacingAfter = 8
+                    };
+                    partTable.SetWidths(new float[] { 3f, 1f, 1f });
+
+                    // Header cells
+                    PdfPCell hn = new PdfPCell(new Phrase("Name", headerFont)) { BackgroundColor = new BaseColor(24, 30, 54), Padding = 6, HorizontalAlignment = Element.ALIGN_LEFT };
+                    PdfPCell hr = new PdfPCell(new Phrase("Role", headerFont)) { BackgroundColor = new BaseColor(24, 30, 54), Padding = 6, HorizontalAlignment = Element.ALIGN_CENTER };
+                    PdfPCell hs = new PdfPCell(new Phrase("Status", headerFont)) { BackgroundColor = new BaseColor(24, 30, 54), Padding = 6, HorizontalAlignment = Element.ALIGN_CENTER };
+                    partTable.AddCell(hn);
+                    partTable.AddCell(hr);
+                    partTable.AddCell(hs);
+
+                    foreach (DataRow pr in partDt.Rows)
+                    {
+                        string fullName = pr["full_name"]?.ToString() ?? "";
+                        string role = pr["role"]?.ToString() ?? "";
+                        string status = pr["status"]?.ToString() ?? "";
+
+                        PdfPCell c1 = new PdfPCell(new Phrase(fullName, summaryFont)) { Padding = 5, HorizontalAlignment = Element.ALIGN_LEFT };
+                        PdfPCell c2 = new PdfPCell(new Phrase(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(role), summaryFont)) { Padding = 5, HorizontalAlignment = Element.ALIGN_CENTER };
+                        PdfPCell c3 = new PdfPCell(new Phrase(status, summaryFont)) { Padding = 5, HorizontalAlignment = Element.ALIGN_CENTER };
+
+                        partTable.AddCell(c1);
+                        partTable.AddCell(c2);
+                        partTable.AddCell(c3);
+                    }
+
+                    doc.Add(partTable);
+                    hasAnyEventDetails = true;
+                }
+            }
+
+            // If no event details were added, optionally add the old summary text on the page
+            if (!hasAnyEventDetails)
+            {
+                string detailText = lblSummaryData?.Text ?? "";
+                if (!string.IsNullOrWhiteSpace(detailText))
+                {
+                    // Start detailed breakdown on a new page
+                    doc.NewPage();
+                    Paragraph detailTitle2 = new Paragraph("DETAILED BREAKDOWN", summaryHeadingFont)
+                    {
+                        SpacingBefore = 8,
+                        SpacingAfter = 6,
+                        Alignment = Element.ALIGN_LEFT
+                    };
+                    doc.Add(detailTitle2);
+
+                    string[] detailLines = detailText.Split(new[] { '\n' }, StringSplitOptions.None);
+                    foreach (string line in detailLines)
+                    {
+                        doc.Add(new Paragraph(line.Trim(), summaryFont));
+                    }
+                }
+            }
 
             // Footer
             doc.Add(new Paragraph("\n"));
