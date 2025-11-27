@@ -28,7 +28,7 @@ namespace BarangayCogonEventSystemManagement
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmAdminLogin());
+            Application.Run(new frmDashboardAdmin());
             //Application.Run(new frmUserLogin());
         }
     }
