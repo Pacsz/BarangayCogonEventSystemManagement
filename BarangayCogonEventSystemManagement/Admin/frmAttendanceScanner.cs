@@ -395,7 +395,7 @@ namespace BarangayCogonEventManagementSystem
                 DateTime checkoutDeadline = eventEndDateTime.AddHours(GRACE_PERIOD_HOURS);
 
                 // Validation 2: Check if registration is approved
-                if (status != "Approved" && status != "Checked-in")
+                if (status == "Pending")
                 {
                     lblStatus.Text = $"❌ Status: Registration not approved. Status: {status}";
                     lblStatus.ForeColor = Color.FromArgb(255, 152, 0); // Orange color
