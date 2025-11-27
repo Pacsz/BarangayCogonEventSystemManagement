@@ -89,7 +89,8 @@
             this.lblFirstName.Name = "lblFirstName";
             this.lblFirstName.Size = new System.Drawing.Size(120, 23);
             this.lblFirstName.TabIndex = 1;
-            this.lblFirstName.Text = "First Name";
+            this.lblFirstName.Text = "First Name*";
+            this.lblFirstName.Click += new System.EventHandler(this.lblFirstName_Click);
             // 
             // txtFirstName
             // 
@@ -110,7 +111,7 @@
             this.lblLastName.Name = "lblLastName";
             this.lblLastName.Size = new System.Drawing.Size(120, 23);
             this.lblLastName.TabIndex = 3;
-            this.lblLastName.Text = "Last Name";
+            this.lblLastName.Text = "Last Name*";
             // 
             // txtLastName
             // 
@@ -131,7 +132,7 @@
             this.lblEmail.Name = "lblEmail";
             this.lblEmail.Size = new System.Drawing.Size(100, 23);
             this.lblEmail.TabIndex = 5;
-            this.lblEmail.Text = "Email";
+            this.lblEmail.Text = "Email*";
             // 
             // txtEmail
             // 
@@ -152,7 +153,7 @@
             this.lblPassword.Name = "lblPassword";
             this.lblPassword.Size = new System.Drawing.Size(100, 23);
             this.lblPassword.TabIndex = 7;
-            this.lblPassword.Text = "Password";
+            this.lblPassword.Text = "Password*";
             // 
             // txtPassword
             // 
@@ -172,9 +173,9 @@
             this.lblConfirmPassword.ForeColor = System.Drawing.Color.White;
             this.lblConfirmPassword.Location = new System.Drawing.Point(719, 414);
             this.lblConfirmPassword.Name = "lblConfirmPassword";
-            this.lblConfirmPassword.Size = new System.Drawing.Size(150, 23);
+            this.lblConfirmPassword.Size = new System.Drawing.Size(174, 23);
             this.lblConfirmPassword.TabIndex = 9;
-            this.lblConfirmPassword.Text = "Confirm Password";
+            this.lblConfirmPassword.Text = "Confirm Password*";
             // 
             // txtConfirmPassword
             // 
@@ -196,7 +197,7 @@
             this.lblAddress.Name = "lblAddress";
             this.lblAddress.Size = new System.Drawing.Size(100, 23);
             this.lblAddress.TabIndex = 11;
-            this.lblAddress.Text = "Address";
+            this.lblAddress.Text = "Address*";
             // 
             // txtAddress
             // 
@@ -217,7 +218,7 @@
             this.lblContact.Name = "lblContact";
             this.lblContact.Size = new System.Drawing.Size(150, 23);
             this.lblContact.TabIndex = 13;
-            this.lblContact.Text = "Contact Number";
+            this.lblContact.Text = "Contact Number*";
             // 
             // txtContact
             // 

@@ -204,6 +204,14 @@ namespace BarangayCogonEventSystemManagement.User
 
             dgvBrowse.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_description",
+                HeaderText = "Description",
+                ReadOnly = true,
+                FillWeight = 20
+            });
+
+            dgvBrowse.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
@@ -518,7 +526,8 @@ namespace BarangayCogonEventSystemManagement.User
                                     END AS event_date,
                                     CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                     e.venue AS event_venue,
-                                    e.type AS event_type
+                                    e.type AS event_type,
+                                    e.description AS event_description
                                 FROM events e
                                 WHERE e.start_datetime >= NOW()
                                 AND e.id NOT IN (
@@ -566,7 +575,7 @@ namespace BarangayCogonEventSystemManagement.User
                 {
                     // Add placeholder row
                     int placeholderIndex = dgvBrowse.Rows.Add(
-                        0, "No available events to register", "", "", "", "", ""
+                        0, "No available events to register", "", "", "", "", "", ""
                     );
 
                     DataGridViewRow placeholderRow = dgvBrowse.Rows[placeholderIndex];
@@ -585,6 +594,7 @@ namespace BarangayCogonEventSystemManagement.User
                             dr["event_time"],
                             dr["event_venue"],
                             dr["event_type"],
+                            dr["event_description"],
                             "" // ActionColumn (will be custom painted)
                         );
                     }

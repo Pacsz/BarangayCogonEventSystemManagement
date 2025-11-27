@@ -22,18 +22,40 @@ namespace BarangayCogonEventManagementSystem
             string address = txtAddress.Text.Trim();
             string contact = txtContact.Text.Trim();
 
-            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) || 
-                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            // Validate empty fields
+            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) ||
+                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) ||
+                string.IsNullOrEmpty(confirmPassword) || string.IsNullOrEmpty(address) ||
+                string.IsNullOrEmpty(contact))
             {
-                MessageBox.Show("Please fill in all required fields (First Name, Last Name, Email, and Password).", 
+                MessageBox.Show("Please fill in all required fields.",
                     "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Validate Philippine mobile number
+            // Accepts: 09XXXXXXXXX or +639XXXXXXXXX
+            bool isValidMobile = false;
+            if (contact.StartsWith("09") && contact.Length == 11 && long.TryParse(contact, out _))
+            {
+                isValidMobile = true;
+            }
+            else if (contact.StartsWith("+639") && contact.Length == 13 && long.TryParse(contact.Substring(1), out _))
+            {
+                isValidMobile = true;
+            }
+            if (!isValidMobile)
+            {
+                MessageBox.Show("Please enter a valid Philippine mobile number (e.g., 09XXXXXXXXX or +639XXXXXXXXX).",
+                    "Invalid Mobile Number", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtContact.Focus();
                 return;
             }
 
             // Check if passwords match
             if (password != confirmPassword)
             {
-                MessageBox.Show("Passwords do not match. Please try again.", 
+                MessageBox.Show("Passwords do not match. Please try again.",
                     "Password Mismatch", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtConfirmPassword.Clear();
                 txtConfirmPassword.Focus();
@@ -48,7 +70,7 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count > 0)
                 {
-                    MessageBox.Show("This email is already registered.", "Duplicate Entry", 
+                    MessageBox.Show("This email is already registered.", "Duplicate Entry",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -85,6 +107,11 @@ namespace BarangayCogonEventManagementSystem
             frmUserLogin login = new frmUserLogin();
             login.ShowDialog();
             this.Close();
+        }
+
+        private void lblFirstName_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

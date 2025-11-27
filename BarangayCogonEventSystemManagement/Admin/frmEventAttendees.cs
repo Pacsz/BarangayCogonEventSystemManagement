@@ -532,7 +532,7 @@ namespace BarangayCogonEventManagementSystem
                     int result = DatabaseHelper.ExecuteNonQuery(query, parameters);
                     if (result > 0)
                     {
-                        MessageBox.Show($"Registration approved!\nQR code saved at:\n{fullPath}", 
+                        MessageBox.Show($"Registration approved!", 
                             "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         LoadAttendees();
                     }

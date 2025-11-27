@@ -271,6 +271,14 @@ namespace BarangayCogonEventManagementSystem
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_description",
+                HeaderText = "Description",
+                ReadOnly = true,
+                FillWeight = 15
+            });
+
+            dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "event_end_datetime",
                 HeaderText = "Event End",
                 ReadOnly = true,
@@ -714,7 +722,8 @@ namespace BarangayCogonEventManagementSystem
                                     r.role,
                                     r.status,
                                     r.qr_code,
-                                    e.end_datetime
+                                    e.end_datetime,
+                                    e.description AS event_description
                                 FROM registrations r
                                 INNER JOIN events e ON r.event_id = e.id
                                 WHERE r.user_id = @user_id";
@@ -752,7 +761,7 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count == 0)
                 {
-                    // Add placeholder row - match the column count (11 columns total)
+                    // Add placeholder row - match the column count (12 columns total)
                     int placeholderIndex = dgvMyEvents.Rows.Add(
                         0, // registration_id
                         0, // event_id
@@ -763,6 +772,7 @@ namespace BarangayCogonEventManagementSystem
                         "", // event_type
                         "", // role
                         "", // status
+                        "", // event_description
                         DBNull.Value, // event_end_datetime
                         "" // ActionColumn
                     );
@@ -790,6 +800,7 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_type"],
                             capitalizedRole,
                             dr["status"],
+                            dr["event_description"],
                             dr["end_datetime"], // This will be properly converted to DateTime
                             "" // ActionColumn (will be custom painted)
                         );

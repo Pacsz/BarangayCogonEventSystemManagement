@@ -216,6 +216,14 @@ namespace BarangayCogonEventManagementSystem
 
             dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "event_description",
+                HeaderText = "Description",
+                ReadOnly = true,
+                FillWeight = 15
+            });
+
+            dgvUpcomingEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "event_end_datetime",
                 HeaderText = "Event End",
                 ReadOnly = true,
@@ -304,6 +312,7 @@ namespace BarangayCogonEventManagementSystem
                                         CONCAT(DATE_FORMAT(e.start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(e.end_datetime, '%h:%i %p')) AS event_time,
                                         e.venue AS event_venue,
                                         e.type AS event_type,
+                                        e.description AS event_description,
                                         e.end_datetime AS event_end_datetime,
                                         r.id AS registration_id,
                                         r.status AS registration_status,
@@ -334,6 +343,7 @@ namespace BarangayCogonEventManagementSystem
                         "", // event_time
                         "", // event_venue
                         "", // event_type
+                        "", // event_description
                         DBNull.Value, // event_end_datetime
                         ""  // ActionColumn
                     );
@@ -359,6 +369,7 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_time"],
                             dr["event_venue"],
                             dr["event_type"],
+                            dr["event_description"],
                             dr["event_end_datetime"],
                             "" // ActionColumn (will be custom painted)
                         );

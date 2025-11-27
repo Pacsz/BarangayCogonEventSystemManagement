@@ -398,7 +398,7 @@ namespace BarangayCogonEventManagementSystem
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "time",
-                HeaderText = "Event Schedule",
+                HeaderText = "Schedule",
                 ReadOnly = true,
                 FillWeight = 13
             });
@@ -440,7 +440,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "description",
                 HeaderText = "Description",
                 ReadOnly = true,
-                Visible = false
+                FillWeight = 13
             });
 
             dgvEvents.Columns.Add(new DataGridViewTextBoxColumn
@@ -448,7 +448,7 @@ namespace BarangayCogonEventManagementSystem
                 Name = "ActionColumn",
                 HeaderText = "Action",
                 ReadOnly = true,
-                FillWeight = 8
+                FillWeight = 10
             });
 
             // Wire up event handlers
@@ -530,7 +530,7 @@ namespace BarangayCogonEventManagementSystem
                                         WHEN DATE(start_datetime) = DATE(end_datetime) THEN DATE_FORMAT(start_datetime, '%b %d, %Y')
                                         ELSE CONCAT(DATE_FORMAT(start_datetime, '%b %d'), ' - ', DATE_FORMAT(end_datetime, '%b %d, %Y'))
                                     END AS date_display,
-                                    CONCAT(DATE_FORMAT(start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(endDatetime, '%h:%i %p')) AS time_display,
+                                    CONCAT(DATE_FORMAT(start_datetime, '%h:%i %p'), ' - ', DATE_FORMAT(end_datetime, '%h:%i %p')) AS time_display,
                                     venue, 
                                     type, 
                                     organizer 
