@@ -669,7 +669,20 @@ namespace BarangayCogonEventManagementSystem
                 string userName = dtDetails.Rows[0]["user_name"].ToString();
                 string qrCode = dtDetails.Rows[0]["qr_code"]?.ToString();
 
-                DialogResult result = MessageBox.Show("Are you sure you want to reject this registration?", 
+                // Prompt for rejection reason
+                string rejectionReason = ShowRejectionReasonDialog(userName, eventName);
+                
+                if (string.IsNullOrEmpty(rejectionReason))
+                {
+                    // User cancelled - don't proceed with rejection
+                    return;
+                }
+
+                DialogResult result = MessageBox.Show(
+                    $"Are you sure you want to reject this registration?\n\n" +
+                    $"User: {userName}\n" +
+                    $"Event: {eventName}\n" +
+                    $"Reason: {rejectionReason}", 
                     "Confirm Rejection", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (result == DialogResult.Yes)
@@ -696,9 +709,12 @@ namespace BarangayCogonEventManagementSystem
                         }
                     }
 
-                    // Update database - set status to Rejected and qr_code to NULL
-                    string query = "UPDATE registrations SET status='Rejected', qr_code=NULL WHERE id=@id";
-                    MySqlParameter[] parameters = { new MySqlParameter("@id", registrationId) };
+                    // Update database - set status to Rejected, qr_code to NULL, and save rejection reason
+                    string query = "UPDATE registrations SET status='Rejected', qr_code=NULL, rejection_reason=@reason WHERE id=@id";
+                    MySqlParameter[] parameters = { 
+                        new MySqlParameter("@reason", rejectionReason),
+                        new MySqlParameter("@id", registrationId) 
+                    };
 
                     int rowsAffected = DatabaseHelper.ExecuteNonQuery(query, parameters);
                     if (rowsAffected > 0)
@@ -714,6 +730,157 @@ namespace BarangayCogonEventManagementSystem
                 MessageBox.Show("Error rejecting registration: " + ex.Message, 
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private string ShowRejectionReasonDialog(string userName, string eventName)
+        {
+            // Create a custom dialog for rejection reason input
+            Form reasonDialog = new Form
+            {
+                Text = "Rejection Reason",
+                Size = new Size(450, 380),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = Color.FromArgb(46, 51, 73)
+            };
+
+            Label lblTitle = new Label
+            {
+                Text = $"Please provide a reason for rejecting:",
+                Location = new Point(20, 20),
+                Size = new Size(410, 25),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
+            };
+
+            Label lblInfo = new Label
+            {
+                Text = $"User: {userName}\nEvent: {eventName}",
+                Location = new Point(20, 50),
+                Size = new Size(410, 40),
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.FromArgb(158, 161, 178),
+                BackColor = Color.Transparent
+            };
+
+            Label lblReason = new Label
+            {
+                Text = "Rejection Reason:",
+                Location = new Point(20, 100),
+                Size = new Size(150, 20),
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
+            };
+
+            TextBox txtReason = new TextBox
+            {
+                Location = new Point(20, 125),
+                Size = new Size(410, 80),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                MaxLength = 500
+            };
+
+            Button btnSubmit = new Button
+            {
+                Text = "Submit",
+                Location = new Point(160, 220),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(244, 67, 54),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnSubmit.FlatAppearance.BorderSize = 0;
+
+            Button btnCancel = new Button
+            {
+                Text = "Cancel",
+                Location = new Point(270, 220),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(60, 65, 90),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.Cancel,
+                Cursor = Cursors.Hand
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded buttons
+            btnSubmit.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            btnCancel.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            btnSubmit.Click += (s, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(txtReason.Text))
+                {
+                    MessageBox.Show("Please provide a rejection reason.", "Required Field",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtReason.Focus();
+                }
+                else
+                {
+                    reasonDialog.DialogResult = DialogResult.OK;
+                    reasonDialog.Close();
+                }
+            };
+
+            reasonDialog.Controls.Add(lblTitle);
+            reasonDialog.Controls.Add(lblInfo);
+            reasonDialog.Controls.Add(lblReason);
+            reasonDialog.Controls.Add(txtReason);
+            reasonDialog.Controls.Add(btnSubmit);
+            reasonDialog.Controls.Add(btnCancel);
+
+            reasonDialog.CancelButton = btnCancel;
+
+            if (reasonDialog.ShowDialog() == DialogResult.OK)
+            {
+                return txtReason.Text.Trim();
+            }
+
+            return null;
         }
 
         private void ViewQRCode(string eventName, string userName, string qrCodeData)

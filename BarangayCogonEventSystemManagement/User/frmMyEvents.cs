@@ -271,6 +271,14 @@ namespace BarangayCogonEventManagementSystem
 
             dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
             {
+                Name = "rejection_reason",
+                HeaderText = "Rejection Reason",
+                ReadOnly = true,
+                Visible = false
+            });
+
+            dgvMyEvents.Columns.Add(new DataGridViewTextBoxColumn
+            {
                 Name = "event_description",
                 HeaderText = "Description",
                 ReadOnly = true,
@@ -342,12 +350,26 @@ namespace BarangayCogonEventManagementSystem
 
                 if (isRejected)
                 {
-                    // Draw "N/A" text for rejected registrations
-                    using (Font naFont = new Font("Segoe UI", 10F, FontStyle.Regular))
-                    using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(158, 161, 178)))
+                    // Draw info icon for rejected registrations
+                    int iconSize = 24;
+                    int iconX = cellBounds.X + (cellBounds.Width - iconSize) / 2;
+                    int iconY = cellBounds.Y + (cellBounds.Height - iconSize) / 2;
+                    Rectangle iconRect = new Rectangle(iconX, iconY, iconSize, iconSize);
+
+                    using (SolidBrush iconBrush = new SolidBrush(Color.FromArgb(244, 67, 54))) // Red color
+                    using (Font iconFont = new Font("Segoe UI", 14F, FontStyle.Bold))
                     using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
                     {
-                        e.Graphics.DrawString("N/A", naFont, textBrush, cellBounds, sf);
+                        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        
+                        // Draw circle background
+                        e.Graphics.FillEllipse(iconBrush, iconRect);
+                        
+                        // Draw 'i' text in white
+                        using (SolidBrush textBrush = new SolidBrush(Color.White))
+                        {
+                            e.Graphics.DrawString("i", iconFont, textBrush, iconRect, sf);
+                        }
                     }
                 }
                 else
@@ -394,13 +416,16 @@ namespace BarangayCogonEventManagementSystem
 
                 if (isRejected)
                 {
-                    // Don't show menu for rejected registrations
+                    // Show rejection reason popup
+                    string rejectionReason = row.Cells["rejection_reason"].Value?.ToString();
+                    string eventName = row.Cells["event_name"].Value?.ToString();
+                    ShowRejectionReasonPopup(eventName, rejectionReason);
                     return;
                 }
 
                 int registrationId = Convert.ToInt32(row.Cells["registration_id"].Value);
                 int eventId = Convert.ToInt32(row.Cells["event_id"].Value);
-                string eventName = row.Cells["event_name"].Value?.ToString();
+                string eventName2 = row.Cells["event_name"].Value?.ToString();
 
                 // Clear existing menu items
                 contextMenuActions.Items.Clear();
@@ -411,7 +436,7 @@ namespace BarangayCogonEventManagementSystem
                     // Show Unregister for pending registrations
                     ToolStripMenuItem unregisterItem = new ToolStripMenuItem("✗ Unregister");
                     unregisterItem.Font = new Font("Segoe UI", 10F);
-                    unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName);
+                    unregisterItem.Click += (s, ev) => UnregisterFromEvent(registrationId, eventName2);
                     contextMenuActions.Items.Add(unregisterItem);
                 }
                 else
@@ -419,7 +444,7 @@ namespace BarangayCogonEventManagementSystem
                     // Show View QR for approved/checked-in/attended registrations
                     ToolStripMenuItem viewQRItem = new ToolStripMenuItem("🔲 View QR");
                     viewQRItem.Font = new Font("Segoe UI", 10F);
-                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName, registrationId);
+                    viewQRItem.Click += (s, ev) => ViewQRCode(eventName2, registrationId);
                     contextMenuActions.Items.Add(viewQRItem);
                 }
 
@@ -438,6 +463,107 @@ namespace BarangayCogonEventManagementSystem
                 // Show the context menu right next to the action button
                 contextMenuActions.Show(dgvMyEvents, pt);
             }
+        }
+
+        private void ShowRejectionReasonPopup(string eventName, string rejectionReason)
+        {
+            // Create a custom dialog to display rejection reason
+            Form reasonForm = new Form
+            {
+                Text = "Rejection Reason",
+                Size = new Size(450, 360),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = Color.FromArgb(46, 51, 73)
+            };
+
+            Label lblTitle = new Label
+            {
+                Text = "Your registration was rejected",
+                Location = new Point(20, 20),
+                Size = new Size(410, 25),
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(244, 67, 54), // Red color
+                BackColor = Color.Transparent
+            };
+
+            Label lblEvent = new Label
+            {
+                Text = $"Event: {eventName}",
+                Location = new Point(20, 55),
+                Size = new Size(410, 20),
+                Font = new Font("Segoe UI", 9F),
+                ForeColor = Color.FromArgb(158, 161, 178),
+                BackColor = Color.Transparent
+            };
+
+            Label lblReasonLabel = new Label
+            {
+                Text = "Reason:",
+                Location = new Point(20, 85),
+                Size = new Size(100, 20),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
+            };
+
+            TextBox txtReason = new TextBox
+            {
+                Location = new Point(20, 110),
+                Size = new Size(410, 80),
+                Font = new Font("Segoe UI", 10F),
+                BackColor = Color.FromArgb(37, 42, 64),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                Text = string.IsNullOrEmpty(rejectionReason) ? "No reason provided." : rejectionReason
+            };
+
+            Button btnClose = new Button
+            {
+                Text = "Close",
+                Location = new Point(175, 205),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(60, 65, 90),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                DialogResult = DialogResult.OK,
+                Cursor = Cursors.Hand
+            };
+            btnClose.FlatAppearance.BorderSize = 0;
+
+            // Add Paint event for rounded button
+            btnClose.Paint += (s, e) =>
+            {
+                Button btn = s as Button;
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Rectangle rect = new Rectangle(0, 0, btn.Width - 1, btn.Height - 1);
+                using (GraphicsPath path = GetRoundPath(rect, 8))
+                {
+                    btn.Region = new Region(path);
+                    using (SolidBrush brush = new SolidBrush(btn.BackColor))
+                    {
+                        e.Graphics.FillPath(brush, path);
+                    }
+                    TextRenderer.DrawText(e.Graphics, btn.Text, btn.Font, rect,
+                        btn.ForeColor, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+            };
+
+            reasonForm.Controls.Add(lblTitle);
+            reasonForm.Controls.Add(lblEvent);
+            reasonForm.Controls.Add(lblReasonLabel);
+            reasonForm.Controls.Add(txtReason);
+            reasonForm.Controls.Add(btnClose);
+
+            reasonForm.AcceptButton = btnClose;
+
+            reasonForm.ShowDialog();
         }
 
         private void ViewQRCode(string eventName, int registrationId)
@@ -721,6 +847,7 @@ namespace BarangayCogonEventManagementSystem
                                     e.type AS event_type,
                                     r.role,
                                     r.status,
+                                    r.rejection_reason,
                                     r.qr_code,
                                     e.end_datetime,
                                     e.description AS event_description
@@ -761,7 +888,7 @@ namespace BarangayCogonEventManagementSystem
 
                 if (dt.Rows.Count == 0)
                 {
-                    // Add placeholder row - match the column count (12 columns total)
+                    // Add placeholder row - match the column count (13 columns total)
                     int placeholderIndex = dgvMyEvents.Rows.Add(
                         0, // registration_id
                         0, // event_id
@@ -772,6 +899,7 @@ namespace BarangayCogonEventManagementSystem
                         "", // event_type
                         "", // role
                         "", // status
+                        "", // rejection_reason
                         "", // event_description
                         DBNull.Value, // event_end_datetime
                         "" // ActionColumn
@@ -800,6 +928,7 @@ namespace BarangayCogonEventManagementSystem
                             dr["event_type"],
                             capitalizedRole,
                             dr["status"],
+                            dr["rejection_reason"],
                             dr["event_description"],
                             dr["end_datetime"], // This will be properly converted to DateTime
                             "" // ActionColumn (will be custom painted)
