@@ -707,6 +707,53 @@ namespace BarangayCogonEventManagementSystem
                     return;
                 }
 
+                // Check for exact start/end datetime conflicts with any existing registration for this user
+                try
+                {
+                    string eventTimeQuery = "SELECT start_datetime, end_datetime FROM events WHERE id = @id";
+                    MySqlParameter[] timeParams = { new MySqlParameter("@id", eventId) };
+                    DataTable dtTime = DatabaseHelper.ExecuteQuery(eventTimeQuery, timeParams);
+
+                    if (dtTime.Rows.Count > 0)
+                    {
+                        DateTime start = Convert.ToDateTime(dtTime.Rows[0]["start_datetime"]);
+                        DateTime end = Convert.ToDateTime(dtTime.Rows[0]["end_datetime"]);
+
+                        string conflictQuery = @"SELECT e.name FROM registrations r
+                                                 INNER JOIN events e ON r.event_id = e.id
+                                                 WHERE r.user_id = @user_id AND e.start_datetime = @start AND e.end_datetime = @end";
+
+                        MySqlParameter[] conflictParams = {
+                            new MySqlParameter("@user_id", userId),
+                            new MySqlParameter("@start", start),
+                            new MySqlParameter("@end", end)
+                        };
+
+                        DataTable dtConflicts = DatabaseHelper.ExecuteQuery(conflictQuery, conflictParams);
+                        if (dtConflicts.Rows.Count > 0)
+                        {
+                            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                            foreach (DataRow dr in dtConflicts.Rows)
+                            {
+                                sb.AppendLine("- " + dr["name"].ToString());
+                            }
+
+                            DialogResult conflictResult = MessageBox.Show(
+                                $"Warning: The event you're trying to register has the same start and end time as one or more of your registered events:\n\n{sb.ToString()}\nDo you still want to continue?",
+                                "Time Conflict Detected",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Warning);
+
+                            if (conflictResult == DialogResult.No) return;
+                        }
+                    }
+                }
+                catch (Exception exTime)
+                {
+                    // Non-fatal: allow registration if time-check fails
+                    Console.WriteLine("Error checking event time conflicts: " + exTime.Message);
+                }
+
                 // Show confirmation dialog before registration
                 DialogResult confirmResult = MessageBox.Show(
                     $"Do you want to register for this event?\n\n" +
