@@ -738,7 +738,7 @@ namespace BarangayCogonEventManagementSystem
             Form reasonDialog = new Form
             {
                 Text = "Rejection Reason",
-                Size = new Size(450, 380),
+                Size = new Size(470, 340),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,

@@ -719,9 +719,13 @@ namespace BarangayCogonEventManagementSystem
                         DateTime start = Convert.ToDateTime(dtTime.Rows[0]["start_datetime"]);
                         DateTime end = Convert.ToDateTime(dtTime.Rows[0]["end_datetime"]);
 
-                        string conflictQuery = @"SELECT e.name FROM registrations r
+                        string conflictQuery = @"SELECT e.name, e.start_datetime, e.end_datetime, r.status FROM registrations r
                                                  INNER JOIN events e ON r.event_id = e.id
-                                                 WHERE r.user_id = @user_id AND e.start_datetime = @start AND e.end_datetime = @end";
+                                                 WHERE r.user_id = @user_id
+                                                 AND DATE(e.start_datetime) = DATE(@start)
+                                                 AND DATE(e.end_datetime) = DATE(@end)
+                                                 AND DATE_FORMAT(e.start_datetime, '%H:%i') = DATE_FORMAT(@start, '%H:%i')
+                                                 AND DATE_FORMAT(e.end_datetime, '%H:%i') = DATE_FORMAT(@end, '%H:%i')";
 
                         MySqlParameter[] conflictParams = {
                             new MySqlParameter("@user_id", userId),
@@ -735,7 +739,10 @@ namespace BarangayCogonEventManagementSystem
                             System.Text.StringBuilder sb = new System.Text.StringBuilder();
                             foreach (DataRow dr in dtConflicts.Rows)
                             {
-                                sb.AppendLine("- " + dr["name"].ToString());
+                                DateTime cs = Convert.ToDateTime(dr["start_datetime"]);
+                                DateTime ce = Convert.ToDateTime(dr["end_datetime"]);
+                                string status = dr["status"] == DBNull.Value ? "" : dr["status"].ToString();
+                                sb.AppendLine($"- {dr["name"].ToString()} ({cs.ToString("MMM dd, yyyy hh:mm tt")} - {ce.ToString("hh:mm tt")}) {(!string.IsNullOrEmpty(status) ? "- Status: " + status : "")} ");
                             }
 
                             DialogResult conflictResult = MessageBox.Show(

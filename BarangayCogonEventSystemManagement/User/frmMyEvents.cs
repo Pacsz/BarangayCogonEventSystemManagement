@@ -669,6 +669,60 @@ namespace BarangayCogonEventManagementSystem
                         };
                         DatabaseHelper.ExecuteNonQuery(deleteQuery, deleteParams);
 
+                        // Before inserting, check for time conflicts (hours and minutes only)
+                        try
+                        {
+                            string eventTimeQuery = "SELECT start_datetime, end_datetime FROM events WHERE id = @id";
+                            MySqlParameter[] timeParams = { new MySqlParameter("@id", eventId) };
+                            DataTable dtTime = DatabaseHelper.ExecuteQuery(eventTimeQuery, timeParams);
+
+                            if (dtTime.Rows.Count > 0)
+                            {
+                                DateTime start = Convert.ToDateTime(dtTime.Rows[0]["start_datetime"]);
+                                DateTime end = Convert.ToDateTime(dtTime.Rows[0]["end_datetime"]);
+
+                                string conflictQuery = @"SELECT e.name, e.start_datetime, e.end_datetime, r.status FROM registrations r
+                                                         INNER JOIN events e ON r.event_id = e.id
+                                                         WHERE r.user_id = @user_id
+                                                         AND DATE(e.start_datetime) = DATE(@start)
+                                                         AND DATE(e.end_datetime) = DATE(@end)
+                                                         AND DATE_FORMAT(e.start_datetime, '%H:%i') = DATE_FORMAT(@start, '%H:%i')
+                                                         AND DATE_FORMAT(e.end_datetime, '%H:%i') = DATE_FORMAT(@end, '%H:%i')";
+
+                                MySqlParameter[] conflictParams = {
+                                    new MySqlParameter("@user_id", userId),
+                                    new MySqlParameter("@start", start),
+                                    new MySqlParameter("@end", end)
+                                };
+
+                                DataTable dtConflicts = DatabaseHelper.ExecuteQuery(conflictQuery, conflictParams);
+                                if (dtConflicts.Rows.Count > 0)
+                                {
+                                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                                    foreach (DataRow dr in dtConflicts.Rows)
+                                    {
+                                        DateTime cs = Convert.ToDateTime(dr["start_datetime"]);
+                                        DateTime ce = Convert.ToDateTime(dr["end_datetime"]);
+                                        string status = dr["status"] == DBNull.Value ? "" : dr["status"].ToString();
+                                        sb.AppendLine($"- {dr["name"].ToString()} ({cs.ToString("MMM dd, yyyy hh:mm tt")} - {ce.ToString("hh:mm tt")}) {(!string.IsNullOrEmpty(status) ? "- Status: " + status : "")} ");
+                                    }
+
+                                    DialogResult conflictResult = MessageBox.Show(
+                                        $"Warning: The event you're trying to register has the same start and end time (hours and minutes) as one or more of your registered events:\n\n{sb.ToString()}\nDo you still want to continue?",
+                                        "Time Conflict Detected",
+                                        MessageBoxButtons.YesNo,
+                                        MessageBoxIcon.Warning);
+
+                                    if (conflictResult == DialogResult.No) return;
+                                }
+                            }
+                        }
+                        catch (Exception exTime)
+                        {
+                            // Non-fatal: allow registration if time-check fails
+                            Console.WriteLine("Error checking event time conflicts: " + exTime.Message);
+                        }
+
                         // Insert new registration with qr_code explicitly set to NULL
                         string insertQuery = @"INSERT INTO registrations (event_id, user_id, role, status, qr_code, created_at)
                                               VALUES (@event_id, @user_id, @role, 'Pending', NULL, NOW())";
