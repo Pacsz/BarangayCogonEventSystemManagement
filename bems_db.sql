@@ -1,8 +1,7 @@
 -- ===================================================================
 -- BARANGAY EVENT MANAGEMENT SYSTEM (BEMS) - UPDATED DATABASE SCHEMA
 -- Database: bems_db
--- Updated: Aligned with new status configuration
--- Status Values: Pending, Approved, Checked-in, Attended, Rejected, Didn't Attend
+-- Updated: Added rejection_reason + system roles (admin/user)
 -- ===================================================================
 
 CREATE DATABASE IF NOT EXISTS bems_db;
@@ -60,6 +59,7 @@ CREATE TABLE registrations (
     user_id INT UNSIGNED NOT NULL,
     role ENUM('attendee','volunteer','speaker') NOT NULL,
     status ENUM('Pending', 'Approved', 'Checked-in', 'Attended', 'Rejected', 'Didn''t Attend') DEFAULT 'Pending',
+    rejection_reason VARCHAR(255), -- NEW COLUMN
     qr_code VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uniq_event_user (event_id, user_id),
@@ -242,5 +242,19 @@ CREATE INDEX idx_reg_user_event ON registrations(user_id, event_id);
 CREATE INDEX idx_events_datetime_range ON events(start_datetime, end_datetime);
 
 -- ===================================================================
+-- INSERT DEFAULT ADMIN ACCOUNT
+-- ===================================================================
+INSERT INTO users (
+    first_name, last_name, email, password, system_role, address, contact_number
+) VALUES (
+    'Admin', 'User', 'admin@bems.com',
+    SHA2('admin123', 256),
+    'admin',
+    'Barangay Hall',
+    '09000000000'
+);
+
+-- ===================================================================
 -- END OF SCHEMA
 -- ===================================================================
+
